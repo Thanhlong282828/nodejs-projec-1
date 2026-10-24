@@ -1,0 +1,32 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">WORKSPACE OPERATIONS</div>
+<h1>Vận hành hệ thống</h1>
+<p>Theo dõi queue và các dịch vụ hỗ trợ HRM.</p>
+</div>
+</section>
+<section class="panel system-panel">
+<h2>Hàng đợi thông báo</h2>
+<p>Thông báo được giữ trong MySQL Outbox trước khi chuyển đến BullMQ / Redis.</p>
+<pre id="system-stats">Đang tải trạng thái…</pre>
+<div class="info-grid">
+<article>
+<h3>Scheduler</h3>
+<p>Chuyển outbox mỗi 10 giây. Tổng hợp HR lúc 08:00, thứ Hai–Sáu (giờ Việt Nam).</p>
+</article>
+<article>
+<h3>Notification service</h3>
+<p>Process và database riêng. Nhận job, gửi email và lưu lịch sử thông báo.</p>
+</article>
+<article>
+<h3>Mail thử nghiệm</h3>
+<p>Mở Mailpit trên máy tại cổng 8037 để xem nội dung email, không gửi ra hộp thư thật.</p>
+</article>
+<article>
+<h3>Realtime & cache</h3>
+<p>Socket theo user/role. Dashboard cache Redis 30 giây và xóa cache sau thay đổi.</p>
+</article>
+</div>
+</section>
+<%- include('partials/footer') %>

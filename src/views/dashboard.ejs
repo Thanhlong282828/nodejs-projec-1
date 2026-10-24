@@ -1,0 +1,156 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">WORKSPACE OVERVIEW</div>
+<h1>Một ngày tốt lành, <%= user.name.split(' ').slice(-1)[0] %> <span class="greeting-spark">✦</span>
+</h1>
+<p>Cùng nhìn lại nhịp hoạt động của đội ngũ hôm nay.</p>
+</div>
+<span class="date-chip">
+<%= new Date().toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long',year:'numeric'}) %>
+</span>
+</section>
+<section class="welcome-banner">
+<div>
+<span class="banner-tag">PEOPLE FIRST, ALWAYS</span>
+<h2>Mọi kết nối tốt đẹp<br>bắt đầu từ con người.</h2>
+<p>Quản lý dễ dàng hơn. Dành thêm thời gian cho đội ngũ.</p>
+<a class="button light" href="<%= user.role==='employee'?'/leaves':'/employees' %>">
+<%= user.role==='employee'?'Gửi đơn nghỉ phép':'Khám phá đội ngũ' %> <span>↗</span>
+</a>
+</div>
+<div class="banner-art" aria-hidden="true">
+<span class="art-ring ring1">
+</span>
+<span class="art-ring ring2">
+</span>
+<span class="art-ring ring3">
+</span>
+<div class="art-card">
+<span class="mini-avatar a1">A</span>
+<span class="mini-avatar a2">M</span>
+<span class="mini-avatar a3">B</span>
+<strong>Better together.</strong>
+<small>Mỗi cá nhân, một giá trị riêng.</small>
+</div>
+<span class="art-star">✳</span>
+</div>
+</section>
+<section class="stats-grid">
+<% for(const [icon,label,value,detail,color] of [['♙',user.role==='employee'?'Hồ sơ của bạn':'Nhân viên đang làm việc',stats.employees,'Thành viên trong workspace','accent'],['▦','Phòng ban',stats.departments,'Kết nối các nhóm chuyên môn','blue'],['◷','Đã check-in hôm nay',stats.presentToday,'Cập nhật theo chấm công thực tế','orange'],['▣','Đơn nghỉ chờ duyệt',stats.pendingLeaves,'Cần được xem xét và phản hồi','purple']]){ %>
+<article class="stat-card">
+<div class="stat-top">
+<span class="stat-icon <%= color %>">
+<%= icon %>
+</span>
+<span class="muted">↗</span>
+</div>
+<p>
+<%= label %>
+</p>
+<strong>
+<%= value %>
+</strong>
+<small>
+<%= detail %>
+</small>
+</article>
+<% } %>
+</section>
+<div class="dashboard-lower">
+<section class="panel">
+<div class="panel-heading">
+<div>
+<h2>
+<%= user.role==='employee'?'Không gian của bạn':'Thành viên mới' %>
+</h2>
+<p>
+<%= user.role==='employee'?'Các thao tác thường dùng trong ngày.':'Chào đón những gương mặt trong đội ngũ.' %>
+</p>
+</div>
+<% if(user.role!=='employee'){ %>
+<a class="text-link" href="/employees">Xem tất cả →</a>
+<% } %>
+</div>
+<% if(user.role==='employee'){ %>
+<div class="quick-grid">
+<a href="/attendance">
+<span>◷</span>
+<strong>Chấm công hôm nay</strong>
+<small>Ghi nhận giờ vào và giờ ra →</small>
+</a>
+<a href="/leaves">
+<span>▣</span>
+<strong>Lên kế hoạch nghỉ</strong>
+<small>Tạo và theo dõi đơn nghỉ →</small>
+</a>
+</div>
+<% }else{ %>
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th>NHÂN VIÊN</th>
+<th>PHÒNG BAN</th>
+<th>TRẠNG THÁI</th>
+</tr>
+</thead>
+<tbody>
+<% for(const e of recent){ %>
+<tr>
+<td>
+<div class="person-cell">
+<span class="avatar pastel">
+<%= e.user.name.split(' ').slice(-1)[0][0] %>
+</span>
+<div>
+<strong>
+<%= e.user.name %>
+</strong>
+<small>
+<%= e.position %>
+</small>
+</div>
+</div>
+</td>
+<td>
+<%= e.department.name %>
+</td>
+<td>
+<span class="badge <%= e.status==='active'?'success':'neutral' %>">
+<%= e.status==='active'?'Đang làm việc':'Ngừng hoạt động' %>
+</span>
+</td>
+</tr>
+<% } %>
+</tbody>
+</table>
+</div>
+<% } %>
+</section>
+<aside class="panel side-panel">
+<span class="eyebrow">GÓC LÀM VIỆC</span>
+<h2>Mỗi ngày,<br>một kết nối tốt hơn.</h2>
+<p>Chủ động cập nhật thông tin, ghi nhận thời gian và lên kế hoạch nghỉ phép ngay tại đây.</p>
+<a class="action-row" href="/attendance">
+<span class="stat-icon orange">◷</span>
+<div>
+<strong>Chấm công</strong>
+<small>Check-in / check-out</small>
+</div>
+<span>↗</span>
+</a>
+<a class="action-row" href="/leaves">
+<span class="stat-icon purple">▣</span>
+<div>
+<strong>Nghỉ phép</strong>
+<small>Theo dõi và phản hồi</small>
+</div>
+<span>↗</span>
+</a>
+<div class="side-bottom">
+<span class="dot">
+</span> Dữ liệu cập nhật từ hệ thống</div>
+</aside>
+</div>
+<%- include('partials/footer') %>

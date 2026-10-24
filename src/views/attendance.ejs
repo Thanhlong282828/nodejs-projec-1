@@ -1,0 +1,49 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">YOUR DAILY RHYTHM</div>
+<h1>Chấm công</h1>
+<p>Ghi nhận thời gian làm việc theo múi giờ Việt Nam.</p>
+</div>
+<div class="button-group">
+<button class="button primary" data-action="/api/attendance/check-in">◷ Check-in</button>
+<button class="button secondary" data-action="/api/attendance/check-out">Check-out →</button>
+</div>
+</section>
+<section class="panel">
+<div class="panel-heading">
+<div>
+<h2>Lịch sử chấm công</h2>
+<p>
+<%= user.role==='employee'?'Thời gian làm việc của bạn.':'Theo dõi giờ vào và giờ ra của đội ngũ.' %>
+</p>
+</div>
+</div>
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th>NHÂN VIÊN</th>
+<th>NGÀY LÀM VIỆC</th>
+<th>CHECK-IN</th>
+<th>CHECK-OUT</th>
+<th>TRẠNG THÁI</th>
+</tr>
+</thead>
+<tbody id="attendance-rows">
+<tr>
+<td colspan="5" class="empty-state">Đang tải lịch sử…</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="pagination">
+<span id="attendance-page-label">
+</span>
+<div>
+<button class="button secondary small-button" id="attendance-prev">← Trước</button>
+<button class="button secondary small-button" id="attendance-next">Tiếp →</button>
+</div>
+</div>
+</section>
+<%- include('partials/footer') %>

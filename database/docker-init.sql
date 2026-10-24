@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS week7_tasks;
+GRANT ALL PRIVILEGES ON week7_tasks.* TO 'week7'@'%';

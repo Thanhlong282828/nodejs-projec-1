@@ -1,0 +1,147 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">PEOPLE DIRECTORY</div>
+<h1>Đội ngũ của chúng ta</h1>
+<p>Quản lý hồ sơ và đồng hành cùng từng thành viên.</p>
+</div>
+<button class="button primary" data-open="employee-dialog">＋ Thêm nhân viên</button>
+</section>
+<section class="panel">
+<form class="toolbar" method="get">
+<input name="search" placeholder="Tìm tên, email hoặc mã nhân viên…" value="<%= query.search||'' %>" aria-label="Tìm nhân viên">
+<select name="departmentId" aria-label="Lọc phòng ban">
+<option value="">Tất cả phòng ban</option>
+<% for(const d of departments){ %>
+<option value="<%= d.id %>" <%= String(query.departmentId)===String(d.id)?'selected':'' %>>
+<%= d.name %>
+</option>
+<% } %>
+</select>
+<button class="button secondary">Tìm kiếm</button>
+<span class="muted">
+<%= result.pagination.total %> nhân viên</span>
+</form>
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th>NHÂN VIÊN</th>
+<th>PHÒNG BAN / VỊ TRÍ</th>
+<th>NGÀY GIA NHẬP</th>
+<th>LƯƠNG CƠ BẢN</th>
+<th>TRẠNG THÁI</th>
+<th>THAO TÁC</th>
+</tr>
+</thead>
+<tbody>
+<% for(const e of result.items){ %>
+<tr>
+<td>
+<div class="person-cell">
+<span class="avatar pastel">
+<%= e.user.name.split(' ').slice(-1)[0][0] %>
+</span>
+<div>
+<strong>
+<%= e.user.name %>
+</strong>
+<small>
+<%= e.code %> · <%= e.user.email %>
+</small>
+</div>
+</div>
+</td>
+<td>
+<strong>
+<%= e.department.name %>
+</strong>
+<small>
+<%= e.position %>
+</small>
+</td>
+<td>
+<%= e.joinedOn %>
+</td>
+<td>
+<%= Number(e.salary).toLocaleString('vi-VN') %> ₫</td>
+<td>
+<span class="badge <%= e.status==='active'?'success':'neutral' %>">
+<%= e.status==='active'?'Đang làm việc':'Ngừng hoạt động' %>
+</span>
+</td>
+<td>
+<button class="text-button" data-edit-employee="<%= JSON.stringify(e) %>">Sửa</button>
+<% if(e.status==='active'&&e.userId!==user.id){ %>
+<button class="text-button danger" data-delete="/api/employees/<%= e.id %>" data-confirm="Vô hiệu hóa nhân viên này? Dữ liệu lịch sử sẽ được giữ.">Ngừng</button>
+<% } %>
+</td>
+</tr>
+<% } %>
+<% if(!result.items.length){ %>
+<tr>
+<td colspan="6" class="empty-state">Chưa có nhân viên phù hợp với bộ lọc.</td>
+</tr>
+<% } %>
+</tbody>
+</table>
+</div>
+<%- include('partials/pagination',{pagination:result.pagination,query,base:'/employees'}) %>
+</section>
+<dialog id="employee-dialog">
+<form data-api="/api/employees" id="employee-form">
+<div class="dialog-heading">
+<div>
+<h2>Hồ sơ nhân viên</h2>
+<p>Thông tin làm việc và tài khoản truy cập.</p>
+</div>
+<button type="button" data-close="employee-dialog" class="icon-button" aria-label="Đóng">×</button>
+</div>
+<div class="form-grid">
+<label>Họ và tên<input name="name" required maxlength="120">
+</label>
+<label>Email công việc<input name="email" type="email" required>
+</label>
+<label>Mã nhân viên<input name="code" required maxlength="30" placeholder="HRM007">
+</label>
+<label>Mật khẩu<input name="password" type="password" required minlength="10" placeholder="Tối thiểu 10 ký tự">
+</label>
+<label>Phòng ban<select name="departmentId" data-number required>
+<% for(const d of departments){ %>
+<option value="<%= d.id %>">
+<%= d.name %>
+</option>
+<% } %>
+</select>
+</label>
+<label>Chức danh<input name="position" required>
+</label>
+<label>Số điện thoại<input name="phone" maxlength="30">
+</label>
+<label>Ngày gia nhập<input name="joinedOn" type="date" required>
+</label>
+<label>Lương cơ bản (VND)<input name="salary" data-number type="number" min="0" step="0.01" required>
+</label>
+<label>Quyền truy cập<select name="role">
+<option value="employee">Nhân viên</option>
+<% if(user.role==='admin'){ %>
+<option value="hr">HR</option>
+<option value="admin">Admin</option>
+<% } %>
+</select>
+</label>
+<label>Trạng thái<select name="status">
+<option value="active">Đang làm việc</option>
+<option value="inactive">Ngừng hoạt động</option>
+</select>
+</label>
+</div>
+<div class="form-error" role="alert">
+</div>
+<div class="dialog-footer">
+<button type="button" class="button secondary" data-close="employee-dialog">Hủy</button>
+<button class="button primary">Lưu hồ sơ</button>
+</div>
+</form>
+</dialog>
+<%- include('partials/footer') %>

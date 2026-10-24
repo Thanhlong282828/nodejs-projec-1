@@ -1,0 +1,53 @@
+{
+  "name": "week7-hrm",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js",
+    "infra:setup": "node scripts/infra-setup.mjs",
+    "migrate": "node --env-file=.env scripts/hrm-cli.js migrate",
+    "migrate:status": "node --env-file=.env scripts/hrm-cli.js migrations",
+    "migrate:undo": "node --env-file=.env scripts/hrm-cli.js undo",
+    "seed": "node --env-file=.env scripts/hrm-cli.js seed",
+    "cli": "node --env-file=.env scripts/hrm-cli.js",
+    "schedule": "node --env-file=.env src/scheduler.js",
+    "schedule:run": "node --env-file=.env scripts/hrm-cli.js schedule:run",
+    "queue:dispatch": "node --env-file=.env scripts/hrm-cli.js dispatch",
+    "test": "node --env-file=.env --test --test-concurrency=1 test/*.test.js",
+    "test:e2e": "node --env-file=.env scripts/e2e-check.js",
+    "legacy:cli": "node day43/node-product-analyzer.js",
+    "legacy:exercises": "node day43/exercises.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mysql2": "^3.14.0",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.1.0",
+    "express-rate-limit": "^8.1.0",
+    "sequelize": "^6.37.7",
+    "umzug": "^3.8.2",
+    "zod": "^4.1.0",
+    "ejs": "^3.1.10",
+    "cookie-parser": "^1.4.7",
+    "bullmq": "^5.61.0",
+    "ioredis": "^5.8.0",
+    "node-cron": "^4.2.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.1.4",
+    "prettier": "^3.6.0"
+  },
+  "overrides": {
+    "sequelize": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

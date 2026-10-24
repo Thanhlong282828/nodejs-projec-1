@@ -1,0 +1,49 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">TEAMS & CONNECTIONS</div>
+<h1>Phòng ban</h1>
+<p>Kết nối các nhóm chuyên môn trong tổ chức.</p>
+</div>
+<button class="button primary" data-open="department-dialog">＋ Thêm phòng ban</button>
+</section>
+<div class="department-grid">
+<% for(const d of departments){ %>
+<article class="panel department-card">
+<span class="stat-icon accent">▦</span>
+<h2>
+<%= d.name %>
+</h2>
+<p>
+<%= d.description||'Chưa có mô tả.' %>
+</p>
+<div class="department-bottom">
+<span>
+<%= d.employees.length %> thành viên</span>
+<div>
+<button class="text-button" data-edit-department="<%= JSON.stringify({id:d.id,name:d.name,description:d.description}) %>">Sửa</button>
+<button class="text-button danger" data-delete="/api/departments/<%= d.id %>">Xóa</button>
+</div>
+</div>
+</article>
+<% } %>
+</div>
+<dialog id="department-dialog">
+<form data-api="/api/departments" id="department-form">
+<div class="dialog-heading">
+<h2>Phòng ban</h2>
+<button type="button" data-close="department-dialog" class="icon-button" aria-label="Đóng">×</button>
+</div>
+<label>Tên phòng ban<input name="name" required maxlength="100">
+</label>
+<label>Mô tả<textarea name="description" maxlength="500" rows="4">
+</textarea>
+</label>
+<div class="form-error" role="alert">
+</div>
+<div class="dialog-footer">
+<button class="button primary">Lưu phòng ban</button>
+</div>
+</form>
+</dialog>
+<%- include('partials/footer') %>

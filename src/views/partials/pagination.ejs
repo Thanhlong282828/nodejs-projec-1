@@ -1,0 +1,12 @@
+<% const totalPages=Math.max(1,Math.ceil(pagination.total/10));const previous=new URLSearchParams({...query,page:Math.max(1,pagination.page-1)});const next=new URLSearchParams({...query,page:pagination.page+1}); %>
+<div class="pagination">
+<span>Trang <%= pagination.page %> / <%= totalPages %> · <%= pagination.total %> kết quả</span>
+<div>
+<% if(pagination.page>1){ %>
+<a class="button secondary small-button" href="<%= base %>?<%= previous %>">← Trước</a>
+<% } %>
+<% if(pagination.page<totalPages){ %>
+<a class="button secondary small-button" href="<%= base %>?<%= next %>">Tiếp →</a>
+<% } %>
+</div>
+</div>

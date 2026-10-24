@@ -1,0 +1,92 @@
+services:
+  mysql:
+    image: mysql:8.4
+    ports: ["127.0.0.1:3377:3306"]
+    environment:
+      MYSQL_ROOT_PASSWORD: local-root-week7-only
+      MYSQL_USER: week7
+      MYSQL_PASSWORD: local-week7-only
+      MYSQL_DATABASE: week7_inventory
+    volumes:
+      - week7_data:/var/lib/mysql
+      - ./database/docker-init.sql:/docker-entrypoint-initdb.d/02-tasks.sql:ro
+      - ./database/hrm-init.sql:/docker-entrypoint-initdb.d/03-hrm.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-plocal-root-week7-only"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["127.0.0.1:6387:6379"]
+    volumes: ["hrm_redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 30
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8037:8025", "127.0.0.1:1037:1025"]
+  app:
+    profiles: ["full"]
+    build: .
+    env_file: .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      HOST: 0.0.0.0
+      NOTIFICATION_URL: http://notifications:3058
+      APP_ORIGIN: http://localhost:8087
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3057/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 20
+  notifications:
+    profiles: ["full"]
+    build: ./services/notifications
+    env_file: ./services/notifications/.env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      HOST: 0.0.0.0
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3058/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 20
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      mailpit: {condition: service_started}
+  scheduler:
+    profiles: ["full"]
+    build: .
+    command: ["node", "src/scheduler.js"]
+    env_file: .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+  web:
+    profiles: ["full"]
+    image: nginx:1.28-alpine
+    ports: ["127.0.0.1:8087:80"]
+    volumes: ["./docker/nginx.conf:/etc/nginx/nginx.conf:ro"]
+    depends_on:
+      app: {condition: service_healthy}
+volumes:
+  week7_data:
+  hrm_redis:

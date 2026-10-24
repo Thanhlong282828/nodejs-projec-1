@@ -1,0 +1,122 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">TIME TO RECHARGE</div>
+<h1>Nghỉ phép</h1>
+<p>Theo dõi lịch nghỉ, giữ nhịp phối hợp cùng đội ngũ.</p>
+</div>
+<button class="button primary" data-open="leave-dialog">＋ Tạo đơn nghỉ</button>
+</section>
+<section class="panel">
+<form class="toolbar" method="get">
+<select name="status" aria-label="Lọc trạng thái">
+<option value="">Tất cả trạng thái</option>
+<% for(const [s,label] of [['pending','Chờ duyệt'],['approved','Đã duyệt'],['rejected','Từ chối']]){ %>
+<option value="<%= s %>" <%= query.status===s?'selected':'' %>>
+<%= label %>
+</option>
+<% } %>
+</select>
+<button class="button secondary">Lọc đơn</button>
+<span class="muted">
+<%= result.pagination.total %> đơn nghỉ</span>
+</form>
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th>NHÂN VIÊN</th>
+<th>LOẠI NGHỈ / THỜI GIAN</th>
+<th>LÝ DO</th>
+<th>TRẠNG THÁI</th>
+<th>PHẢN HỒI</th>
+<th>THAO TÁC</th>
+</tr>
+</thead>
+<tbody>
+<% for(const l of result.items){ %>
+<tr>
+<td>
+<strong>
+<%= l.employee.user.name %>
+</strong>
+<small>
+<%= l.employee.department.name %>
+</small>
+</td>
+<td>
+<strong>
+<%= {annual:'Nghỉ phép năm',sick:'Nghỉ ốm',unpaid:'Nghỉ không lương'}[l.type] %>
+</strong>
+<small>
+<%= l.startDate %> → <%= l.endDate %>
+</small>
+</td>
+<td class="reason-cell">
+<%= l.reason %>
+</td>
+<td>
+<span class="badge <%= {pending:'warning',approved:'success',rejected:'failed'}[l.status] %>">
+<%= {pending:'Chờ duyệt',approved:'Đã duyệt',rejected:'Từ chối'}[l.status] %>
+</span>
+</td>
+<td>
+<%= l.note||'—' %>
+<% if(l.reviewer){ %>
+<small>
+<%= l.reviewer.name %>
+</small>
+<% } %>
+</td>
+<td>
+<% if(l.status==='pending'){if(user.role!=='employee'&&l.employee.user.id!==user.id){ %>
+<button class="text-button" data-decision="approved" data-id="<%= l.id %>">Duyệt</button>
+<button class="text-button danger" data-decision="rejected" data-id="<%= l.id %>">Từ chối</button>
+<% }if(l.employee.user.id===user.id){ %>
+<button class="text-button danger" data-delete="/api/leaves/<%= l.id %>">Hủy đơn</button>
+<% }} %>
+</td>
+</tr>
+<% } %>
+<% if(!result.items.length){ %>
+<tr>
+<td colspan="6" class="empty-state">Chưa có đơn nghỉ phép. Bạn có thể tạo đơn mới ở phía trên.</td>
+</tr>
+<% } %>
+</tbody>
+</table>
+</div>
+<%- include('partials/pagination',{pagination:result.pagination,query,base:'/leaves'}) %>
+</section>
+<dialog id="leave-dialog">
+<form data-api="/api/leaves">
+<div class="dialog-heading">
+<div>
+<h2>Tạo đơn nghỉ phép</h2>
+<p>Gửi yêu cầu để HR hoặc Admin xem xét.</p>
+</div>
+<button type="button" class="icon-button" data-close="leave-dialog" aria-label="Đóng">×</button>
+</div>
+<label>Loại nghỉ<select name="type">
+<option value="annual">Nghỉ phép năm</option>
+<option value="sick">Nghỉ ốm</option>
+<option value="unpaid">Nghỉ không lương</option>
+</select>
+</label>
+<div class="form-grid">
+<label>Từ ngày<input name="startDate" type="date" required>
+</label>
+<label>Đến ngày<input name="endDate" type="date" required>
+</label>
+</div>
+<label>Lý do<textarea name="reason" rows="4" maxlength="1000" required>
+</textarea>
+</label>
+<div class="form-error" role="alert">
+</div>
+<div class="dialog-footer">
+<button class="button primary">Gửi đơn nghỉ</button>
+</div>
+</form>
+</dialog>
+<%- include('partials/footer') %>

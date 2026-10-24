@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">STAY IN THE LOOP</div>
+<h1>Thông báo của bạn</h1>
+<p>Thông tin và phản hồi được gửi đến tài khoản của bạn.</p>
+</div>
+<a class="button secondary" href="/notifications">Làm mới ↻</a>
+</section>
+<section class="panel notification-panel">
+<% if(notice){ %>
+<div class="empty-state">
+<%= notice %>
+</div>
+<% } %>
+<% for(const m of messages){ %>
+<article class="message-row">
+<span class="stat-icon accent">✉</span>
+<div>
+<h3>
+<%= m.subject %>
+</h3>
+<p>
+<%= m.text %>
+</p>
+<small>
+<%= new Date(m.createdAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}) %> · <%= m.status==='sent'?'Đã gửi email':'Đang gửi email' %>
+</small>
+</div>
+</article>
+<% } %>
+<% if(!messages.length&&!notice){ %>
+<div class="empty-state">Chưa có thông báo. Thông báo mới sẽ xuất hiện sau khi xử lý hàng đợi.</div>
+<% } %>
+</section>
+<%- include('partials/footer') %>

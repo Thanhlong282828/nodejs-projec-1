@@ -1,0 +1,23 @@
+{
+  "name": "hrm-notification-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "migrate": "node --env-file=.env src/migrate.js"
+  },
+  "dependencies": {
+    "bullmq": "^5.61.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.0",
+    "nodemailer": "^10.2.1",
+    "sequelize": "^6.37.7",
+    "umzug": "^3.8.2"
+  },
+  "overrides": {
+    "sequelize": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

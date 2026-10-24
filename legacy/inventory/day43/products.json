@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Book",
+    "price": 20,
+    "stock": 5,
+    "category": "Books"
+  },
+  {
+    "id": 2,
+    "name": "Pen",
+    "price": 5,
+    "stock": 10,
+    "category": "Office"
+  },
+  {
+    "id": 3,
+    "name": "Notebook",
+    "price": 10,
+    "stock": 4,
+    "category": "Books"
+  }
+]

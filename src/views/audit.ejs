@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+<section class="page-heading">
+<div>
+<div class="eyebrow">WORKSPACE ACTIVITY</div>
+<h1>Nhật ký thay đổi</h1>
+<p>50 thay đổi gần nhất, tự ghi nhận bởi observer trong cùng transaction.</p>
+</div>
+</section>
+<section class="panel">
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th>THỜI GIAN</th>
+<th>NGƯỜI THỰC HIỆN</th>
+<th>DỮ LIỆU</th>
+<th>HÀNH ĐỘNG</th>
+</tr>
+</thead>
+<tbody>
+<% for(const row of rows){ %>
+<tr>
+<td>
+<%= new Date(row.createdAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}) %>
+</td>
+<td>
+<%= row.actorId?'User #'+row.actorId:'Hệ thống' %>
+</td>
+<td>
+<%= row.entity %> #<%= row.entityId %>
+</td>
+<td>
+<span class="badge neutral">
+<%= row.action %>
+</span>
+</td>
+</tr>
+<% } %>
+<% if(!rows.length){ %>
+<tr>
+<td colspan="4" class="empty-state">Chưa có thay đổi được ghi nhận.</td>
+</tr>
+<% } %>
+</tbody>
+</table>
+</div>
+</section>
+<%- include('partials/footer') %>

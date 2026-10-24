@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đăng nhập · PeopleFlow</title>
+<link rel="stylesheet" href="/css/app.css">
+<script src="/js/app.js" defer>
+</script>
+</head>
+<body class="login-body">
+<div class="login-story">
+<a class="brand" href="/login">
+<span class="brand-mark">pf</span>PeopleFlow</a>
+<div>
+<span class="eyebrow">CON NGƯỜI. KẾT NỐI. PHÁT TRIỂN.</span>
+<h1>Đội ngũ vững mạnh.<br>Hành trình bền lâu.</h1>
+<p>Một không gian để quản lý công việc nhân sự,<br>đồng hành cùng từng thành viên.</p>
+<div class="login-visual">
+<span class="orbit o1">
+</span>
+<span class="orbit o2">
+</span>
+<span class="orbit o3">
+</span>
+<div class="visual-center">pf<span>people first.</span>
+</div>
+<div class="floating-person fp1">AN</div>
+<div class="floating-person fp2">ML</div>
+<div class="floating-person fp3">HB</div>
+</div>
+</div>
+<small>PeopleFlow · Human resources, made human.</small>
+</div>
+<section class="login-panel">
+<div class="login-card">
+<span class="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
+<h2>Đăng nhập workspace</h2>
+<p class="muted">Bắt đầu một ngày làm việc hiệu quả cùng đội ngũ.</p>
+<form data-api="/api/auth/login" data-redirect="/">
+<label>Email công việc<input name="email" type="email" autocomplete="username" placeholder="ban@congty.com" required>
+</label>
+<label>Mật khẩu<input name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+</label>
+<div class="form-error" role="alert">
+</div>
+<button class="button primary full" type="submit">Đăng nhập <span>→</span>
+</button>
+</form>
+<div class="demo-note">
+<strong>Tài khoản dùng thử</strong>
+<p>Admin: admin@hrm.local<br>HR: hr@hrm.local<br>Nhân viên: employee@hrm.local</p>
+<p>Mật khẩu chung: <code>HrmDemo123!</code>
+</p>
+</div>
+</div>
+</section>
+<div id="toast" role="status" hidden>
+</div>
+</body>
+</html>

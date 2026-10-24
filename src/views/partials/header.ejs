@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<%= csrf %>">
+<title>
+<%= title %> · PeopleFlow</title>
+<link rel="stylesheet" href="/css/app.css">
+<script src="/js/app.js" defer>
+</script>
+<script src="/socket.io/socket.io.js" defer>
+</script>
+<script src="/js/realtime.js" defer>
+</script>
+</head>
+<body>
+<aside class="sidebar">
+<a href="/" class="brand">
+<span class="brand-mark">p<span>f</span>
+</span>PeopleFlow<span class="brand-dot">®</span>
+</a>
+<div class="workspace">
+<span class="workspace-avatar">P</span>
+<div>PeopleFlow Workspace<small>Quản trị nhân sự</small>
+</div>
+<span>⌄</span>
+</div>
+<div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
+<nav aria-label="Điều hướng chính">
+<% const items=[['dashboard','/','◫','Tổng quan'],...(user.role!=='employee'?[['employees','/employees','♙','Nhân viên'],['departments','/departments','▦','Phòng ban']]:[]),['attendance','/attendance','◷','Chấm công'],['leaves','/leaves','▣','Nghỉ phép'],['notifications','/notifications','♧','Thông báo'],...(user.role!=='employee'?[['audit','/audit','≡','Nhật ký thay đổi']]:[]),...(user.role==='admin'?[['system','/system','⚙','Hệ thống']]:[])]; %>
+<% for(const [key,url,icon,label] of items){ %>
+<a href="<%= url %>" class="nav-item <%= active===key?'selected':'' %>" <%- active===key?'aria-current="page"':'' %>>
+<span class="nav-icon">
+<%= icon %>
+</span>
+<%= label %>
+</a>
+<% } %>
+</nav>
+<div class="sidebar-note">
+<span class="dot">
+</span> Con người là trọng tâm<p>Một nơi cho mọi kết nối<br>trong đội ngũ của bạn.</p>
+</div>
+<div class="sidebar-user">
+<span class="avatar">
+<%= user.name.split(' ').slice(-2).map(s=>s[0]).join('') %>
+</span>
+<div>
+<strong>
+<%= user.name %>
+</strong>
+<small>
+<%= {admin:'Quản trị viên',hr:'Nhân sự',employee:'Nhân viên'}[user.role] %>
+</small>
+</div>
+<button class="icon-button" id="logout" title="Đăng xuất" aria-label="Đăng xuất">↪</button>
+</div>
+</aside>
+<div class="main-shell">
+<header class="topbar">
+<div class="breadcrumb">Không gian làm việc <span>/</span> <strong>
+<%= title %>
+</strong>
+</div>
+<div class="topbar-right">
+<span id="live-status" class="live-status">Đang kết nối</span>
+<a class="notification-link" href="/notifications" aria-label="Thông báo">♧</a>
+<span class="avatar small">
+<%= user.name.split(' ').slice(-1)[0][0] %>
+</span>
+</div>
+</header>
+<main>
+<div id="toast" class="toast" role="status" hidden>
+</div>
