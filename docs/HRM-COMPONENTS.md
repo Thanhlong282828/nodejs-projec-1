@@ -16,7 +16,7 @@ npm run migrate; npm run migrate:status
 
 [Code](../src/modules/employees/routes.js) · [Tài liệu chính thức](https://expressjs.com/en/guide/routing.html)
 
-GET/POST/PUT/DELETE /api/employees
+GET /api/employees/list; GET /api/employees/detail/:id; POST /api/employees/create; PUT /api/employees/update/:id; DELETE /api/employees/delete/:id
 
 ## 4. Validation — Zod
 
@@ -82,7 +82,7 @@ Tự ghi audit khi create/update/destroy qua ORM, rollback cùng dữ liệu.
 
 [Code](../src/lib/redis.js) · [Tài liệu chính thức](https://redis.io/docs/latest/develop/)
 
-GET /api/dashboard: header X-Cache MISS rồi HIT; mutation invalidate.
+GET /api/dashboard/summary: header X-Cache MISS rồi HIT; mutation invalidate.
 
 ## 15. Realtime — Socket.IO authenticated rooms
 

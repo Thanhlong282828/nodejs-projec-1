@@ -79,17 +79,17 @@ app.use((req, res, next) => {
   next();
 });
 app.post("/api/auth/logout", authController.logout);
-app.get("/api/auth/me", (req, res) => data(res, safeUser(req.user)));
-app.get("/api/dashboard", async (req, res) => {
+app.get("/api/auth/profile", (req, res) => data(res, safeUser(req.user)));
+app.get("/api/dashboard/summary", async (req, res) => {
   const result = await dashboard(req.user);
   res.set("X-Cache", result.cache);
   data(res, result.value);
 });
-app.use("/api/employees", employeeRoutes);
-app.use("/api/departments", departmentRoutes);
-app.use("/api/leaves", leaveRoutes);
-app.use("/api/attendance", attendanceRoutes);
-app.get("/api/audit", allow("admin", "hr"), async (req, res) => {
+app.use(employeeRoutes);
+app.use(departmentRoutes);
+app.use(leaveRoutes);
+app.use(attendanceRoutes);
+app.get("/api/audit/list", allow("admin", "hr"), async (req, res) => {
   const q = paginationSchema.parse(req.query);
   const result = await Audit.findAndCountAll({
     order: [["id", "DESC"]],
@@ -100,7 +100,7 @@ app.get("/api/audit", allow("admin", "hr"), async (req, res) => {
 });
 async function getMessages(user) {
   const response = await fetch(
-    `${config.notificationUrl}/internal/messages?userId=${user.id}`,
+    `${config.notificationUrl}/internal/messages/list?userId=${user.id}`,
     {
       headers: { "x-internal-key": config.internalKey },
       signal: AbortSignal.timeout(3000),
@@ -109,7 +109,7 @@ async function getMessages(user) {
   if (!response.ok) throw new HttpError(503, "Dịch vụ thông báo đang bận.");
   return (await response.json()).data;
 }
-app.get("/api/notifications", async (req, res) => {
+app.get("/api/notifications/list", async (req, res) => {
   try {
     data(res, await getMessages(req.user));
   } catch (error) {
@@ -117,7 +117,7 @@ app.get("/api/notifications", async (req, res) => {
     throw new HttpError(503, "Dịch vụ thông báo tạm thời không sẵn sàng.");
   }
 });
-app.get("/api/system", allow("admin"), async (req, res) => {
+app.get("/api/system/status", allow("admin"), async (req, res) => {
   let queue;
   try {
     queue = await queueStats();
@@ -145,7 +145,7 @@ app.get("/", async (req, res) => {
     cache: stats.cache,
   });
 });
-app.get("/employees", allow("admin", "hr"), async (req, res) =>
+app.get("/employees/list", allow("admin", "hr"), async (req, res) =>
   res.render("employees", {
     title: "Nhân viên",
     active: "employees",
@@ -154,7 +154,7 @@ app.get("/employees", allow("admin", "hr"), async (req, res) =>
     query: req.query,
   }),
 );
-app.get("/departments", allow("admin", "hr"), async (req, res) =>
+app.get("/departments/list", allow("admin", "hr"), async (req, res) =>
   res.render("departments", {
     title: "Phòng ban",
     active: "departments",
@@ -164,7 +164,7 @@ app.get("/departments", allow("admin", "hr"), async (req, res) =>
     }),
   }),
 );
-app.get("/leaves", async (req, res) =>
+app.get("/leaves/list", async (req, res) =>
   res.render("leaves", {
     title: "Nghỉ phép",
     active: "leaves",
@@ -172,10 +172,10 @@ app.get("/leaves", async (req, res) =>
     query: req.query,
   }),
 );
-app.get("/attendance", async (req, res) =>
+app.get("/attendance/list", async (req, res) =>
   res.render("attendance", { title: "Chấm công", active: "attendance" }),
 );
-app.get("/notifications", async (req, res) => {
+app.get("/notifications/list", async (req, res) => {
   let messages = [],
     notice = "";
   try {
@@ -190,14 +190,14 @@ app.get("/notifications", async (req, res) => {
     notice,
   });
 });
-app.get("/audit", allow("admin", "hr"), async (req, res) =>
+app.get("/audit/list", allow("admin", "hr"), async (req, res) =>
   res.render("audit", {
     title: "Nhật ký thay đổi",
     active: "audit",
     rows: await Audit.findAll({ order: [["id", "DESC"]], limit: 50 }),
   }),
 );
-app.get("/system", allow("admin"), async (req, res) =>
+app.get("/system/status", allow("admin"), async (req, res) =>
   res.render("system", { title: "Hệ thống", active: "system" }),
 );
 app.use((req, res, next) =>

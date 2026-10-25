@@ -28,7 +28,7 @@ Các route web tại app.js đóng vai web controller render EJS; REST tách rou
 
 ## Một luồng tạo nhân viên
 
-POST /api/employees → authenticate → CSRF (cookie) → allow(admin,hr) → controller → Zod → transaction(User, Employee, observer audit, Outbox) → commit → publish nội bộ (invalidate cache, Socket) → response 201.
+POST /api/employees/create → authenticate → CSRF (cookie) → allow(admin,hr) → controller → Zod → transaction(User, Employee, observer audit, Outbox) → commit → publish nội bộ (invalidate cache, Socket) → response 201.
 
 Scheduler lấy pending outbox → BullMQ jobId=UUID → Notification Worker → DB notification (eventId unique) → Nodemailer → Mailpit → status sent. HRM không cần service notification đang sống để commit nghiệp vụ.
 
@@ -47,3 +47,8 @@ Cache có TTL 30 giây và invalidate sau mutation. Cache fail thì đọc DB; n
 Realtime hiện một instance web, chưa có Socket.IO Redis adapter để scale nhiều app. Socket bị đóng lúc token hết hạn và recheck role/version 15 giây; payload broadcast chỉ tên sự kiện, không có hồ sơ/lương. Không claim production-ready hoặc đã deploy Internet.
 
 Demo cookies HttpOnly, SameSite=Lax; JWT expiry 8 giờ, logout thu hồi mọi phiên user, password/role/active thay đổi tăng tokenVersion. Khi public cần HTTPS, COOKIE_SECURE=true, APP_ORIGIN chính xác, secret thật, thay tài khoản/password demo, SMTP thật và chính sách backup. Không đưa khóa vào git.
+
+
+## Khai báo URL theo thao tác
+
+Module Router không dùng shared resource prefix. Ví dụ employeeRoutes.get("/api/employees/list", allow("admin","hr"), c.list) và employeeRoutes.post("/api/employees/create", allow("admin","hr"), c.create). App chỉ gắn Router; middleware quyền đặt trên từng route, không áp cho các module khác. Xem [bảng endpoint đầy đủ](HRM-API.md).

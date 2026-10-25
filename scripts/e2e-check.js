@@ -65,7 +65,7 @@ try {
     status: "active",
   };
   const created = await request(server)
-    .post("/api/employees")
+    .post("/api/employees/create")
     .set("Authorization", `Bearer ${token}`)
     .send(body);
   assert.equal(created.status, 201, JSON.stringify(created.body));
@@ -84,7 +84,7 @@ try {
   await dispatch();
   const message = await wait(async () => {
     const r = await fetch(
-      `${config.notificationUrl}/internal/messages?userId=${userId}`,
+      `${config.notificationUrl}/internal/messages/list?userId=${userId}`,
       { headers: { "x-internal-key": config.internalKey } },
     );
     assert.equal(r.status, 200);
@@ -104,7 +104,7 @@ try {
   assert.equal(
     (
       await fetch(
-        `${config.notificationUrl}/internal/messages?userId=${userId}`,
+        `${config.notificationUrl}/internal/messages/list?userId=${userId}`,
       )
     ).status,
     401,

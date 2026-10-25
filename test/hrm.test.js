@@ -92,11 +92,45 @@ test("HRM integration: real MySQL + Redis", async (t) => {
     admin = await login("admin@hrm.local");
     hr = await login("hr@hrm.local");
     await t.test(
+      "Explicit action URLs: old shared resource endpoints are removed",
+      async () => {
+        for (const path of [
+          "/api/employees",
+          "/api/departments",
+          "/api/leaves",
+          "/api/attendance",
+          "/api/dashboard",
+          "/api/audit",
+          "/api/notifications",
+          "/api/system",
+        ]) {
+          assert.equal(
+            (await call("get", path, admin.token)).status,
+            404,
+            path,
+          );
+        }
+        assert.equal(
+          (await call("get", "/api/departments/list", admin.token)).status,
+          200,
+        );
+        assert.equal(
+          (await call("post", "/api/departments/list", admin.token, {})).status,
+          404,
+        );
+        assert.equal(
+          (await call("get", "/api/departments/create", admin.token)).status,
+          404,
+        );
+      },
+    );
+
+    await t.test(
       "401 unauthenticated and invalid JWT; login rejects wrong password and cross-origin",
       async () => {
-        assert.equal((await call("get", "/api/employees")).status, 401);
+        assert.equal((await call("get", "/api/employees/list")).status, 401);
         assert.equal(
-          (await call("get", "/api/employees", "broken")).status,
+          (await call("get", "/api/employees/list", "broken")).status,
           401,
         );
         assert.equal(
@@ -123,7 +157,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
     await t.test(
       "Department create/update/delete + unique constraint + observer",
       async () => {
-        let r = await call("post", "/api/departments", admin.token, {
+        let r = await call("post", "/api/departments/create", admin.token, {
           name: suffix,
           description: "Test department",
         });
@@ -132,13 +166,13 @@ test("HRM integration: real MySQL + Redis", async (t) => {
         departments.push(dep);
         assert.equal(
           (
-            await call("post", "/api/departments", admin.token, {
+            await call("post", "/api/departments/create", admin.token, {
               name: suffix,
             })
           ).status,
           409,
         );
-        r = await call("put", `/api/departments/${dep}`, admin.token, {
+        r = await call("put", `/api/departments/update/${dep}`, admin.token, {
           name: suffix,
           description: "Updated",
         });
@@ -159,8 +193,20 @@ test("HRM integration: real MySQL + Redis", async (t) => {
             `${suffix}-${i}`,
             dep,
           );
-          const r = await call("post", "/api/employees", admin.token, body);
+          const r = await call(
+            "post",
+            "/api/employees/create",
+            admin.token,
+            body,
+          );
           assert.equal(r.status, 201, JSON.stringify(r.body));
+          const detail = await call(
+            "get",
+            `/api/employees/detail/${r.body.data.id}`,
+            admin.token,
+          );
+          assert.equal(detail.status, 200);
+          assert.equal(detail.body.data.id, r.body.data.id);
           employees.push(r.body.data.id);
           users.push(r.body.data.userId);
           assert.equal(r.body.data.user.password, undefined);
@@ -181,7 +227,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
         const before = await Audit.count();
         const r = await call(
           "post",
-          "/api/employees",
+          "/api/employees/create",
           admin.token,
           spec(`${suffix}-invalid@example.test`, `${suffix}-bad`, 4294967295),
         );
@@ -199,17 +245,20 @@ test("HRM integration: real MySQL + Redis", async (t) => {
       "RBAC: employees cannot list/write employee records; HR cannot elevate role",
       async () => {
         assert.equal(
-          (await call("get", "/api/employees", staff.token)).status,
+          (await call("get", "/api/employees/list", staff.token)).status,
           403,
         );
         assert.equal(
-          (await call("get", "/api/audit", staff.token)).status,
+          (await call("get", "/api/audit/list", staff.token)).status,
           403,
         );
-        assert.equal((await call("get", "/api/system", hr.token)).status, 403);
+        assert.equal(
+          (await call("get", "/api/system/status", hr.token)).status,
+          403,
+        );
         assert.equal(
           (
-            await call("post", "/api/employees", hr.token, {
+            await call("post", "/api/employees/create", hr.token, {
               ...spec(`${suffix}-evil@example.test`, `${suffix}-evil`, dep),
               role: "admin",
             })
@@ -223,22 +272,24 @@ test("HRM integration: real MySQL + Redis", async (t) => {
       async () => {
         const r = await call(
           "get",
-          `/api/employees?search=${suffix}&departmentId=${dep}&page=1`,
+          `/api/employees/list?search=${suffix}&departmentId=${dep}&page=1`,
           admin.token,
         );
         assert.equal(r.status, 200);
         assert.equal(r.body.data.pagination.total, 2);
         assert.equal(r.body.data.items.length, 2);
         assert.equal(
-          (await call("get", "/api/employees?page=0", admin.token)).status,
+          (await call("get", "/api/employees/list?page=0", admin.token)).status,
           422,
         );
         assert.equal(
-          (await call("get", "/api/employees/invalid", admin.token)).status,
+          (await call("get", "/api/employees/detail/invalid", admin.token))
+            .status,
           422,
         );
         assert.equal(
-          (await call("delete", `/api/departments/${dep}`, admin.token)).status,
+          (await call("delete", `/api/departments/delete/${dep}`, admin.token))
+            .status,
           409,
         );
       },
@@ -273,47 +324,49 @@ test("HRM integration: real MySQL + Redis", async (t) => {
           endDate: "2027-07-03",
           reason: "Test leave",
         };
-        let r = await call("post", "/api/leaves", staff.token, body);
+        let r = await call("post", "/api/leaves/create", staff.token, body);
         assert.equal(r.status, 201, JSON.stringify(r.body));
         const id = r.body.data.id;
         leaves.push(id);
         assert.equal(
-          (await call("post", "/api/leaves", staff.token, body)).status,
+          (await call("post", "/api/leaves/create", staff.token, body)).status,
           409,
         );
         assert.equal(
-          (await call("get", "/api/leaves", other.token)).body.data.items.some(
-            (v) => v.id === id,
-          ),
+          (
+            await call("get", "/api/leaves/list", other.token)
+          ).body.data.items.some((v) => v.id === id),
           false,
         );
         assert.equal(
-          (await call("delete", `/api/leaves/${id}`, other.token)).status,
+          (await call("delete", `/api/leaves/delete/${id}`, other.token))
+            .status,
           403,
         );
         assert.equal(
           (
-            await call("patch", `/api/leaves/${id}/decision`, staff.token, {
+            await call("patch", `/api/leaves/update/${id}`, staff.token, {
               status: "approved",
             })
           ).status,
           403,
         );
-        r = await call("patch", `/api/leaves/${id}/decision`, hr.token, {
+        r = await call("patch", `/api/leaves/update/${id}`, hr.token, {
           status: "approved",
           note: "Đồng ý",
         });
         assert.equal(r.status, 200, JSON.stringify(r.body));
         assert.equal(
           (
-            await call("patch", `/api/leaves/${id}/decision`, admin.token, {
+            await call("patch", `/api/leaves/update/${id}`, admin.token, {
               status: "rejected",
             })
           ).status,
           409,
         );
         assert.equal(
-          (await call("delete", `/api/leaves/${id}`, staff.token)).status,
+          (await call("delete", `/api/leaves/delete/${id}`, staff.token))
+            .status,
           409,
         );
       },
@@ -328,8 +381,8 @@ test("HRM integration: real MySQL + Redis", async (t) => {
           reason: "Concurrency",
         };
         const results = await Promise.all([
-          call("post", "/api/leaves", other.token, body),
-          call("post", "/api/leaves", other.token, body),
+          call("post", "/api/leaves/create", other.token, body),
+          call("post", "/api/leaves/create", other.token, body),
         ]);
         assert.deepEqual(results.map((r) => r.status).sort(), [201, 409]);
       },
@@ -362,7 +415,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
             .status,
           409,
         );
-        const r = await call("get", "/api/attendance", other.token);
+        const r = await call("get", "/api/attendance/list", other.token);
         assert.equal(r.body.data.items.length, 0);
       },
     );
@@ -371,19 +424,25 @@ test("HRM integration: real MySQL + Redis", async (t) => {
       async () => {
         await invalidate();
         assert.equal(
-          (await call("get", "/api/dashboard", admin.token)).headers["x-cache"],
+          (await call("get", "/api/dashboard/summary", admin.token)).headers[
+            "x-cache"
+          ],
           "MISS",
         );
         assert.equal(
-          (await call("get", "/api/dashboard", admin.token)).headers["x-cache"],
+          (await call("get", "/api/dashboard/summary", admin.token)).headers[
+            "x-cache"
+          ],
           "HIT",
         );
-        await call("put", `/api/departments/${dep}`, admin.token, {
+        await call("put", `/api/departments/update/${dep}`, admin.token, {
           name: suffix,
           description: "Cache invalidated",
         });
         assert.equal(
-          (await call("get", "/api/dashboard", admin.token)).headers["x-cache"],
+          (await call("get", "/api/dashboard/summary", admin.token)).headers[
+            "x-cache"
+          ],
           "MISS",
         );
       },
@@ -392,18 +451,19 @@ test("HRM integration: real MySQL + Redis", async (t) => {
       "Cookie login requires CSRF on writes; bearer clients may use API",
       async () => {
         const agent = request.agent(app),
-          r = await agent
-            .post("/api/auth/login")
-            .send({
-              email: `${suffix}-0@example.test`,
-              password: "StrongTest123!",
-            });
+          r = await agent.post("/api/auth/login").send({
+            email: `${suffix}-0@example.test`,
+            password: "StrongTest123!",
+          });
         assert.equal(r.status, 200);
-        assert.equal((await agent.post("/api/leaves").send({})).status, 403);
+        assert.equal(
+          (await agent.post("/api/leaves/create").send({})).status,
+          403,
+        );
         assert.equal(
           (
             await agent
-              .post("/api/leaves")
+              .post("/api/leaves/create")
               .set("X-CSRF-Token", "é".repeat(r.body.data.csrf.length))
               .send({})
           ).status,
@@ -412,7 +472,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
         assert.equal(
           (
             await agent
-              .post("/api/leaves")
+              .post("/api/leaves/create")
               .set("X-CSRF-Token", r.body.data.csrf)
               .send({})
           ).status,
@@ -425,13 +485,13 @@ test("HRM integration: real MySQL + Redis", async (t) => {
       async () => {
         for (const path of [
           "/",
-          "/employees?departmentId=&search=",
-          "/departments",
-          "/leaves?status=",
-          "/attendance",
-          "/notifications",
-          "/audit",
-          "/system",
+          "/employees/list?departmentId=&search=",
+          "/departments/list",
+          "/leaves/list?status=",
+          "/attendance/list",
+          "/notifications/list",
+          "/audit/list",
+          "/system/status",
         ]) {
           const r = await call("get", path, admin.token);
           assert.equal(r.status, 200, `${path}: ${r.text.slice(0, 250)}`);
@@ -440,7 +500,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
         }
         assert.equal((await call("get", "/", staff.token)).status, 200);
         assert.equal(
-          (await call("get", "/employees", staff.token)).status,
+          (await call("get", "/employees/list", staff.token)).status,
           403,
         );
       },
@@ -468,16 +528,21 @@ test("HRM integration: real MySQL + Redis", async (t) => {
           200,
         );
         assert.equal(
-          (await call("get", "/api/auth/me", other.token)).status,
+          (await call("get", "/api/auth/profile", other.token)).status,
           401,
         );
         assert.equal(
-          (await call("delete", `/api/employees/${employees[0]}`, admin.token))
-            .status,
+          (
+            await call(
+              "delete",
+              `/api/employees/delete/${employees[0]}`,
+              admin.token,
+            )
+          ).status,
           204,
         );
         assert.equal(
-          (await call("get", "/api/auth/me", staff.token)).status,
+          (await call("get", "/api/auth/profile", staff.token)).status,
           401,
         );
         assert.equal(
@@ -493,7 +558,7 @@ test("HRM integration: real MySQL + Redis", async (t) => {
           (
             await call(
               "delete",
-              `/api/employees/${admin.user.employeeId}`,
+              `/api/employees/delete/${admin.user.employeeId}`,
               admin.token,
             )
           ).status,

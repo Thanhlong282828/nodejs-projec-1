@@ -44,3 +44,7 @@ npm run test:e2e
 ```
 
 `npm test`: MySQL + Redis thật, dọn dữ liệu test có nhãn riêng. `test:e2e`: thêm Socket.IO, queue, notification service và Mailpit; giữ mail có nhãn E2E để kiểm chứng. Không gọi đây là kết quả bài thi unaided.
+
+## Routing rõ từng thao tác
+
+Dùng URL riêng: `/api/employees/list`, `/detail/:id`, `/create`, `/update/:id`, `/delete/:id` dưới cùng tên module. Ví dụ đầy đủ: `PUT /api/employees/update/:id`. Không dùng resource route hoặc URL CRUD chung. [Bảng API mới](docs/HRM-API.md). Web danh sách nhân viên ở `/employees/list`.

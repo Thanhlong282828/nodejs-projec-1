@@ -73,7 +73,7 @@
 <td>
 <button class="text-button" data-edit-employee="<%= JSON.stringify(e) %>">Sửa</button>
 <% if(e.status==='active'&&e.userId!==user.id){ %>
-<button class="text-button danger" data-delete="/api/employees/<%= e.id %>" data-confirm="Vô hiệu hóa nhân viên này? Dữ liệu lịch sử sẽ được giữ.">Ngừng</button>
+<button class="text-button danger" data-delete="/api/employees/delete/<%= e.id %>" data-confirm="Vô hiệu hóa nhân viên này? Dữ liệu lịch sử sẽ được giữ.">Ngừng</button>
 <% } %>
 </td>
 </tr>
@@ -86,10 +86,10 @@
 </tbody>
 </table>
 </div>
-<%- include('partials/pagination',{pagination:result.pagination,query,base:'/employees'}) %>
+<%- include('partials/pagination',{pagination:result.pagination,query,base:'/employees/list'}) %>
 </section>
 <dialog id="employee-dialog">
-<form data-api="/api/employees" id="employee-form">
+<form data-api="/api/employees/create" id="employee-form">
 <div class="dialog-heading">
 <div>
 <h2>Hồ sơ nhân viên</h2>

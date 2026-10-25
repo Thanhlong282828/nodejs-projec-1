@@ -1,11 +1,14 @@
-// Routing chỉ ghép method + URL với middleware/quyền và controller.
+// Mỗi thao tác có URL và khai báo riêng; không dùng resource route hoặc chung URL CRUD.
 import { Router } from "express";
-import { allow } from "../../middleware/auth.js";
 import * as c from "./controller.js";
+import { allow } from "../../middleware/auth.js";
 export const employeeRoutes = Router();
-employeeRoutes.use(allow("admin", "hr"));
-employeeRoutes.get("/", c.list);
-employeeRoutes.get("/:id", c.get);
-employeeRoutes.post("/", c.create);
-employeeRoutes.put("/:id", c.update);
-employeeRoutes.delete("/:id", c.remove);
+employeeRoutes.get("/api/employees/list", allow("admin", "hr"), c.list);
+employeeRoutes.get("/api/employees/detail/:id", allow("admin", "hr"), c.get);
+employeeRoutes.post("/api/employees/create", allow("admin", "hr"), c.create);
+employeeRoutes.put("/api/employees/update/:id", allow("admin", "hr"), c.update);
+employeeRoutes.delete(
+  "/api/employees/delete/:id",
+  allow("admin", "hr"),
+  c.remove,
+);

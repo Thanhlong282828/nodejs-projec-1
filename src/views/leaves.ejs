@@ -73,7 +73,7 @@
 <button class="text-button" data-decision="approved" data-id="<%= l.id %>">Duyệt</button>
 <button class="text-button danger" data-decision="rejected" data-id="<%= l.id %>">Từ chối</button>
 <% }if(l.employee.user.id===user.id){ %>
-<button class="text-button danger" data-delete="/api/leaves/<%= l.id %>">Hủy đơn</button>
+<button class="text-button danger" data-delete="/api/leaves/delete/<%= l.id %>">Hủy đơn</button>
 <% }} %>
 </td>
 </tr>
@@ -86,10 +86,10 @@
 </tbody>
 </table>
 </div>
-<%- include('partials/pagination',{pagination:result.pagination,query,base:'/leaves'}) %>
+<%- include('partials/pagination',{pagination:result.pagination,query,base:'/leaves/list'}) %>
 </section>
 <dialog id="leave-dialog">
-<form data-api="/api/leaves">
+<form data-api="/api/leaves/create">
 <div class="dialog-heading">
 <div>
 <h2>Tạo đơn nghỉ phép</h2>

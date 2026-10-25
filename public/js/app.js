@@ -53,10 +53,11 @@ for (const button of document.querySelectorAll("[data-open]"))
     form.reset();
     form.dataset.method = "POST";
     if (form.id === "employee-form") {
-      form.dataset.api = "/api/employees";
+      form.dataset.api = "/api/employees/create";
       form.elements.password.required = true;
     }
-    if (form.id === "department-form") form.dataset.api = "/api/departments";
+    if (form.id === "department-form")
+      form.dataset.api = "/api/departments/create";
     dialog.showModal();
   });
 for (const button of document.querySelectorAll("[data-close]"))
@@ -92,7 +93,7 @@ for (const button of document.querySelectorAll("[data-decision]"))
     const note = prompt("Ghi chú phản hồi (có thể để trống):", "");
     if (note === null) return;
     try {
-      await api(`/api/leaves/${button.dataset.id}/decision`, "PATCH", {
+      await api(`/api/leaves/update/${button.dataset.id}`, "PATCH", {
         status: button.dataset.decision,
         note,
       });
@@ -113,7 +114,7 @@ for (const button of document.querySelectorAll("[data-edit-employee]"))
     form.elements.password.required = false;
     form.elements.password.placeholder = "Để trống nếu giữ mật khẩu";
     form.dataset.method = "PUT";
-    form.dataset.api = `/api/employees/${employee.id}`;
+    form.dataset.api = `/api/employees/update/${employee.id}`;
     document.getElementById("employee-dialog").showModal();
   });
 for (const button of document.querySelectorAll("[data-edit-department]"))
@@ -122,7 +123,7 @@ for (const button of document.querySelectorAll("[data-edit-department]"))
       form = document.getElementById("department-form");
     form.elements.name.value = value.name;
     form.elements.description.value = value.description || "";
-    form.dataset.api = `/api/departments/${value.id}`;
+    form.dataset.api = `/api/departments/update/${value.id}`;
     form.dataset.method = "PUT";
     document.getElementById("department-dialog").showModal();
   });
@@ -139,7 +140,7 @@ async function loadAttendance() {
   const rows = document.getElementById("attendance-rows");
   if (!rows) return;
   try {
-    const result = await api(`/api/attendance?page=${attendancePage}`);
+    const result = await api(`/api/attendance/list?page=${attendancePage}`);
     rows.replaceChildren();
     for (const item of result.items) {
       const tr = document.createElement("tr");
@@ -190,7 +191,7 @@ document.getElementById("attendance-next")?.addEventListener("click", () => {
 });
 loadAttendance();
 if (document.getElementById("system-stats"))
-  api("/api/system")
+  api("/api/system/status")
     .then((result) => {
       document.getElementById("system-stats").textContent = JSON.stringify(
         result,

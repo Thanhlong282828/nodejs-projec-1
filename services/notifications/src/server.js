@@ -87,7 +87,7 @@ app.use("/internal", (req, res, next) => {
     return res.status(401).json({ error: "Unauthorized service" });
   next();
 });
-app.get("/internal/messages", async (req, res) => {
+app.get("/internal/messages/list", async (req, res) => {
   if (typeof req.query.userId !== "string" || !/^\d+$/.test(req.query.userId))
     return res.status(422).json({ error: "userId required" });
   res.json({

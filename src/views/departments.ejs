@@ -22,14 +22,14 @@
 <%= d.employees.length %> thành viên</span>
 <div>
 <button class="text-button" data-edit-department="<%= JSON.stringify({id:d.id,name:d.name,description:d.description}) %>">Sửa</button>
-<button class="text-button danger" data-delete="/api/departments/<%= d.id %>">Xóa</button>
+<button class="text-button danger" data-delete="/api/departments/delete/<%= d.id %>">Xóa</button>
 </div>
 </div>
 </article>
 <% } %>
 </div>
 <dialog id="department-dialog">
-<form data-api="/api/departments" id="department-form">
+<form data-api="/api/departments/create" id="department-form">
 <div class="dialog-heading">
 <h2>Phòng ban</h2>
 <button type="button" data-close="department-dialog" class="icon-button" aria-label="Đóng">×</button>

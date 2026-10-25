@@ -28,7 +28,7 @@
 </div>
 <div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
 <nav aria-label="Điều hướng chính">
-<% const items=[['dashboard','/','◫','Tổng quan'],...(user.role!=='employee'?[['employees','/employees','♙','Nhân viên'],['departments','/departments','▦','Phòng ban']]:[]),['attendance','/attendance','◷','Chấm công'],['leaves','/leaves','▣','Nghỉ phép'],['notifications','/notifications','♧','Thông báo'],...(user.role!=='employee'?[['audit','/audit','≡','Nhật ký thay đổi']]:[]),...(user.role==='admin'?[['system','/system','⚙','Hệ thống']]:[])]; %>
+<% const items=[['dashboard','/','◫','Tổng quan'],...(user.role!=='employee'?[['employees','/employees/list','♙','Nhân viên'],['departments','/departments/list','▦','Phòng ban']]:[]),['attendance','/attendance/list','◷','Chấm công'],['leaves','/leaves/list','▣','Nghỉ phép'],['notifications','/notifications/list','♧','Thông báo'],...(user.role!=='employee'?[['audit','/audit/list','≡','Nhật ký thay đổi']]:[]),...(user.role==='admin'?[['system','/system/status','⚙','Hệ thống']]:[])]; %>
 <% for(const [key,url,icon,label] of items){ %>
 <a href="<%= url %>" class="nav-item <%= active===key?'selected':'' %>" <%- active===key?'aria-current="page"':'' %>>
 <span class="nav-icon">
@@ -65,7 +65,7 @@
 </div>
 <div class="topbar-right">
 <span id="live-status" class="live-status">Đang kết nối</span>
-<a class="notification-link" href="/notifications" aria-label="Thông báo">♧</a>
+<a class="notification-link" href="/notifications/list" aria-label="Thông báo">♧</a>
 <span class="avatar small">
 <%= user.name.split(' ').slice(-1)[0][0] %>
 </span>

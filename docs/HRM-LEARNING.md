@@ -21,7 +21,7 @@ npm run cli -- users
 
 ## Bước 3 — Auth / Policy / Validation
 
-Đọc [auth middleware](../src/middleware/auth.js) và [Zod schemas](../src/lib/validation.js). Đăng nhập nhân viên thử truy cập /employees (403). Thử lương âm, email sai, đơn nghỉ trùng. Phân biệt 401, 403, 409, 422. Không xem mật khẩu/token như dữ liệu được phép trả từ model.
+Đọc [auth middleware](../src/middleware/auth.js) và [Zod schemas](../src/lib/validation.js). Đăng nhập nhân viên thử truy cập /employees/list (403). Thử lương âm, email sai, đơn nghỉ trùng. Phân biệt 401, 403, 409, 422. Không xem mật khẩu/token như dữ liệu được phép trả từ model.
 
 ## Bước 4 — Event / Observer / Cache
 
@@ -62,3 +62,8 @@ npm run cli -- queue:retry JOB_ID
 ```
 
 Trong Docker: `docker compose exec app node scripts/hrm-cli.js queue:failed`. Retry là thao tác chủ động vì email có thể được gửi lại; kiểm tra Message-ID và nhật ký trước.
+
+
+## URL riêng cho từng thao tác
+
+[Đọc bảng route hiện tại](HRM-API.md). Mở routes.js: mỗi URL list/detail/create/update/delete có một dòng riêng với HTTP method tương ứng. Giao diện, pagination, fetch, kiểm thử và service nội bộ cùng dùng bộ URL này. Không có route resource tự sinh.

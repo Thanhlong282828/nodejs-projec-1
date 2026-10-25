@@ -21,13 +21,13 @@ try {
     .join(";");
   for (const path of [
     "/",
-    "/employees",
-    "/departments",
-    "/leaves",
-    "/attendance",
-    "/notifications",
-    "/audit",
-    "/system",
+    "/employees/list",
+    "/departments/list",
+    "/leaves/list",
+    "/attendance/list",
+    "/notifications/list",
+    "/audit/list",
+    "/system/status",
   ]) {
     const r = await fetch(base + path, { headers: { cookie } });
     assert.equal(r.status, 200, path);
@@ -41,7 +41,7 @@ try {
     const r = await fetch(base + path);
     assert.equal(r.status, 200, path);
   }
-  const me = await fetch(`${base}/api/auth/me`, {
+  const me = await fetch(`${base}/api/auth/profile`, {
     headers: { Authorization: `Bearer ${auth.token}` },
   });
   assert.equal((await me.json()).data.role, "admin");
@@ -53,7 +53,7 @@ try {
   const service = await fetch("http://notifications:3058/health");
   assert.equal(service.status, 200);
   const unauthorized = await fetch(
-    "http://notifications:3058/internal/messages?userId=1",
+    "http://notifications:3058/internal/messages/list?userId=1",
   );
   assert.equal(unauthorized.status, 401);
   let denied = false;
