@@ -1,4 +1,4 @@
-# Module + MVC, ORM và service
+# Module + MVC + CQRS (đối chiếu Laravel DJI)
 
 ```mermaid
 flowchart LR
@@ -7,11 +7,14 @@ flowchart LR
   Core --> MW[Auth / CSRF / Role middleware]
   MW --> Routes[Module Routes]
   Routes --> Controller[Controller]
-  Controller --> Service[Service / Validation]
-  Service --> ORM[Sequelize Models]
+  Controller --> Query[QueryBus / Query Handler]
+  Query --> Repo[Read Repository]
+  Repo --> ORM[Sequelize Models]
+  Controller --> Command[CommandBus / Validation / Transaction]
+  Command --> ORM
   ORM --> DB[(MySQL HRM)]
   ORM --> Observer[Audit Observer]
-  Service --> Outbox[Transactional Outbox]
+  Command --> Outbox[Transactional Outbox]
   Outbox --> Relay[Scheduler / Relay]
   Relay --> Redis[(Redis BullMQ)]
   Redis --> Notify[Notification Microservice / Worker]
@@ -22,13 +25,13 @@ flowchart LR
   Socket --> Browser
 ```
 
-Các module nghiệp vụ nằm ở `src/modules`: employees, departments, leaves, attendance, auth, dashboard. Model ORM và association đặt ở `src/models/index.js` dùng chung để tránh định nghĩa chồng quan hệ. Views EJS trả HTML; REST controller trả JSON. Helpers trong lib là thư viện nội bộ project; không phải npm package riêng.
+Các module nghiệp vụ nằm ở `src/modules`: employees, departments, leaves, attendance, auth, dashboard, audit, notifications, system; module core sở hữu model outbox/daily run. Model ORM đặt trong `src/modules/*/models/`; `src/models/index.js` là registry và association dùng chung. Views EJS trả HTML; REST controller trả JSON. Helpers trong lib là thư viện nội bộ project; không phải npm package riêng.
 
-Các route web tại app.js đóng vai web controller render EJS; REST tách route/controller/service. Service kiểm tra nghiệp vụ và transaction; observer tự ghi audit. Không dùng `sequelize.sync()` tạo bảng: migration là nguồn schema, chạy trước server.
+`src/app.js` chỉ cấu hình pipeline. Routes ở `src/routes` và trong module; controller riêng cho web/API gửi Query hoặc Command qua bus. Query Handler dùng read repository; Command Handler giữ nghiệp vụ và transaction; observer tự ghi audit. Không dùng `sequelize.sync()` tạo bảng: migration là nguồn schema, chạy trước server.
 
 ## Một luồng tạo nhân viên
 
-POST /api/employees/create → authenticate → CSRF (cookie) → allow(admin,hr) → controller → Zod → transaction(User, Employee, observer audit, Outbox) → commit → publish nội bộ (invalidate cache, Socket) → response 201.
+POST /api/employees/create → authenticate → CSRF (cookie) → authorize(EmployeePolicy, action) → controller → CommandBus → Command Handler → Zod → transaction(User, Employee, observer audit, Outbox) → commit → publish nội bộ (invalidate cache, Socket) → response 201.
 
 Scheduler lấy pending outbox → BullMQ jobId=UUID → Notification Worker → DB notification (eventId unique) → Nodemailer → Mailpit → status sent. HRM không cần service notification đang sống để commit nghiệp vụ.
 
@@ -51,4 +54,9 @@ Demo cookies HttpOnly, SameSite=Lax; JWT expiry 8 giờ, logout thu hồi mọi 
 
 ## Khai báo URL theo thao tác
 
-Module Router không dùng shared resource prefix. Ví dụ employeeRoutes.get("/api/employees/list", allow("admin","hr"), c.list) và employeeRoutes.post("/api/employees/create", allow("admin","hr"), c.create). App chỉ gắn Router; middleware quyền đặt trên từng route, không áp cho các module khác. Xem [bảng endpoint đầy đủ](HRM-API.md).
+Module Router không dùng shared resource prefix. Ví dụ employeeRoutes.get("/api/employees/list", authorize(EmployeePolicy,"view"), c.list) và employeeRoutes.post("/api/employees/create", authorize(EmployeePolicy,"create"), c.create). App chỉ gắn Router; middleware quyền đặt trên từng route, không áp cho các module khác. Xem [bảng endpoint đầy đủ](HRM-API.md).
+
+
+## Đối chiếu với Laravel DJI
+
+[Hướng dẫn TXT cho người chuyển từ Laravel](../HUONG-DAN-LARAVEL-SANG-NODEJS.txt). Provider: `src/providers/HrmServiceProvider.js`; bus: `src/core/MessageBus.js`. Module employees có controllers, requests, models, policies, queries, commands, repositories, routes riêng. Kiến trúc mới giữ nghiệp vụ và schema cũ.

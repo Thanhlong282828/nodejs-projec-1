@@ -53,13 +53,6 @@ export async function authenticate(req, res, next) {
   res.locals.csrf = resolved.claims.csrf;
   next();
 }
-export function allow(...roles) {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role))
-      throw new HttpError(403, "Bạn không có quyền thực hiện thao tác này.");
-    next();
-  };
-}
 export function csrf(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method) || req.isBearer)
     return next();

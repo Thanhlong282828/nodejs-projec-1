@@ -121,7 +121,11 @@ async function seed() {
 }
 const command = process.argv[2] || "help";
 try {
-  if (command === "migrate") await migrator.up();
+  if (command === "route:list") {
+    const { app } = await import("../src/app.js");
+    const { listRoutes } = await import("../src/core/route-list.js");
+    console.table(listRoutes(app));
+  } else if (command === "migrate") await migrator.up();
   else if (command === "migrations")
     console.log({
       executed: (await migrator.executed()).map((v) => v.name),
@@ -161,7 +165,7 @@ try {
     );
   else
     console.log(
-      "Commands: migrate | migrations | seed | users | dispatch | queue:failed | queue:retry JOB_ID | schedule:run | undo --confirm-data-loss",
+      "Commands: route:list | migrate | migrations | seed | users | dispatch | queue:failed | queue:retry JOB_ID | schedule:run | undo --confirm-data-loss",
     );
 } catch (error) {
   console.error(error.message);

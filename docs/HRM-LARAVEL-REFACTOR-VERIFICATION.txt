@@ -1,0 +1,48 @@
+KIỂM CHỨNG TỔ CHỨC CODE THEO LARAVEL DJI — 26/10/2026
+
+Phạm vi đã chọn: giữ nguyên chức năng HRM, ưu tiên cấu trúc quen với Laravel.
+
+SOURCE
+- Controller/API/Web được đưa về module và chỉ điều phối Query/Command/render.
+- Models tách theo module; registry/associations giữ nguyên bảng/cột/quan hệ.
+- Zod FormRequest ở module; validation facade giữ import tương thích.
+- Named Policies + authorize thay role helper chung; ownership/state rules giữ nguyên.
+- Query/ReadRepository tách Command Handler, Provider đăng ký handler.
+- src/app.js chỉ còn cấu hình HTTP/middleware/routes/error handler.
+- Thêm CLI route:list cho việc học và kiểm tra route thật.
+- Không đổi schema, không thêm dependency npm, không đổi .env, không chuyển dữ liệu DJI.
+
+KIỂM THỬ THỰC TẾ
+1. npm test: 26 pass / 0 fail.
+   Bao gồm bus wiring, duplicate/missing handler, controller không truy vấn ORM,
+   query không ghi domain record, policy action tồn tại, không còn flat service trùng;
+   giữ toàn bộ regression MySQL/Redis, login, CSRF, role/ownership, leave concurrency,
+   attendance, rollback/outbox, audit, cache, logout và HTML render.
+2. npm run cli -- route:list: 33 route, action-based URL giống baseline.
+3. Docker rebuild/up: app/scheduler/notification/Nginx hoạt động.
+4. Docker smoke: login cookie, 8 trang HTML, assets, REST, Socket.IO transport,
+   service thông báo và quyền DB tách biệt đều qua.
+5. npm run test:e2e: socket từ chối unauthenticated, phát event sau commit,
+   outbox -> BullMQ/Redis -> service -> notification DB -> Mailpit SMTP đều qua;
+   internal service key, consumer deduplication và retry/failed-job đều qua.
+6. Kiểm tra link tài liệu: không có local link hỏng; 32 đường dẫn source trong
+   hướng dẫn TXT đều tồn tại. git diff --check sạch.
+
+LỖI PHÁT HIỆN VÀ ĐÃ XỬ LÝ
+- Wiring mới gọi LeavePolicy.decide trong khi policy định nghĩa update: sửa về
+  action update, thêm architecture test kiểm tra action nào trên route cũng tồn tại.
+- Một lần test DB offline timeout khi khởi động; giữ nguyên assertion/timeout và
+  chạy lại đầy đủ, kết quả 26 pass. Không làm yếu test để đạt kết quả.
+- Worker local từng mất kết nối MySQL khi khởi động cùng Docker; khởi động lại
+  khi hạ tầng sẵn sàng và chạy lại E2E thành công. Không đổi nghiệp vụ để né lỗi.
+
+GIỚI HẠN BẰNG CHỨNG
+- Không chạy test/audit toàn bộ Laravel DJI; chỉ đọc các source được ghi trong
+  DJI-SOURCE-REVIEW.txt để đối chiếu kiến trúc.
+- Không có kiểm tra trực quan browser/screenshot mới trong lần refactor.
+- Không load test/production deployment; không claim parity với ERP DJI.
+- Lịch 08:00 chưa quan sát ở mốc thực; scheduler idempotency vẫn được regression test.
+- Source được tích hợp trực tiếp vào project chính trên Desktop, không chỉ nằm ở tmp.
+
+HƯỚNG DẪN NGƯỜI HỌC
+../HUONG-DAN-LARAVEL-SANG-NODEJS.txt

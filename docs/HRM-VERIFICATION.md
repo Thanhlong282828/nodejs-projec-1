@@ -38,3 +38,8 @@ Không chạy các bài self-test như bằng chứng người học đã tự c
 Mỗi thao tác có URL riêng: list/detail/create/update/delete. Router khai báo đầy đủ đường dẫn và middleware trên từng route, không mount chung resource prefix. Web links/form/fetch, pagination, notification microservice, test và tài liệu đã đồng bộ. Bản legacy/inventory giữ nguyên vì là lịch sử.
 
 Kiểm chứng sau sửa: 20 tests pass; regression xác nhận endpoint resource cũ trả 404, URL mới đúng HTTP method và phân quyền; E2E queue/mail/realtime pass; smoke Docker/Nginx qua 8 trang HTML, assets, API, Socket.IO và service nội bộ pass. Không kiểm tra trực quan bằng browser trong lần thay đổi này.
+
+
+## 26/10/2026 — tổ chức code giống Laravel DJI
+
+Đã refactor Module + CQRS, giữ chức năng HRM, schema và 33 URL. Phiên kiểm chứng mới: **26 tests pass**, Docker/Nginx smoke và E2E queue/mail/realtime pass. [Báo cáo TXT](HRM-LARAVEL-REFACTOR-VERIFICATION.txt) · [Hướng dẫn so sánh Laravel → Node](../HUONG-DAN-LARAVEL-SANG-NODEJS.txt).

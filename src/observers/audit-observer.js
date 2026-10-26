@@ -7,7 +7,10 @@ import {
 } from "../models/index.js";
 // Observer (Sequelize hook) tự chạy sau thao tác ORM, trong cùng transaction với dữ liệu gốc.
 // Chỉ ghi tên field thay đổi; không đưa password/token hoặc lương vào audit payload.
+let observersRegistered = false;
 export function registerObservers() {
+  if (observersRegistered) return;
+  observersRegistered = true;
   for (const model of [Employee, Department, Leave, Attendance]) {
     for (const [hook, action] of [
       ["afterCreate", "created"],

@@ -1,0 +1,24 @@
+// Tương tự routes/web.php: URL HTML và controller render EJS.
+import { Router } from "express";
+import { loginPage } from "../modules/auth/controllers/AuthController.js";
+import { health } from "../modules/system/controllers/SystemController.js";
+import { webRoutes as employeesRoutes } from "../modules/employees/routes/web.js";
+import { webRoutes as departmentsRoutes } from "../modules/departments/routes/web.js";
+import { webRoutes as leavesRoutes } from "../modules/leaves/routes/web.js";
+import { webRoutes as attendanceRoutes } from "../modules/attendance/routes/web.js";
+import { webRoutes as dashboardRoutes } from "../modules/dashboard/routes/web.js";
+import { webRoutes as notificationsRoutes } from "../modules/notifications/routes/web.js";
+import { webRoutes as auditRoutes } from "../modules/audit/routes/web.js";
+import { webRoutes as systemRoutes } from "../modules/system/routes/web.js";
+export const publicWebRoutes = Router();
+publicWebRoutes.get("/login", loginPage);
+publicWebRoutes.get("/health", health);
+export const webRoutes = Router();
+webRoutes.use(employeesRoutes);
+webRoutes.use(departmentsRoutes);
+webRoutes.use(leavesRoutes);
+webRoutes.use(attendanceRoutes);
+webRoutes.use(dashboardRoutes);
+webRoutes.use(notificationsRoutes);
+webRoutes.use(auditRoutes);
+webRoutes.use(systemRoutes);

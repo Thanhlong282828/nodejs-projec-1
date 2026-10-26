@@ -14,7 +14,7 @@ npm run migrate; npm run migrate:status
 
 ## 3. Routing — Express Router
 
-[Code](../src/modules/employees/routes.js) · [Tài liệu chính thức](https://expressjs.com/en/guide/routing.html)
+[Code](../src/modules/employees/routes/api.js) · [Tài liệu chính thức](https://expressjs.com/en/guide/routing.html)
 
 GET /api/employees/list; GET /api/employees/detail/:id; POST /api/employees/create; PUT /api/employees/update/:id; DELETE /api/employees/delete/:id
 
@@ -32,13 +32,13 @@ authenticate → csrf → role policy → controller.
 
 ## 6. Authorization — RBAC + ownership
 
-[Code](../src/modules/leaves/service.js) · [Tài liệu chính thức](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+[Code](../src/modules/leaves/commands/LeaveCommands.js) · [Tài liệu chính thức](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
 
 Employee bị 403 khi duyệt đơn; người quản lý không được tự duyệt.
 
 ## 7. Authentication — bcrypt + JWT + cookie
 
-[Code](../src/modules/auth/service.js) · [Tài liệu chính thức](https://github.com/auth0/node-jsonwebtoken)
+[Code](../src/modules/auth/commands/AuthCommands.js) · [Tài liệu chính thức](https://github.com/auth0/node-jsonwebtoken)
 
 Đăng nhập; logout tăng tokenVersion để thu hồi token.
 

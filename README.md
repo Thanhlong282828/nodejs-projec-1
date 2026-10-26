@@ -2,6 +2,10 @@
 
 HRM có giao diện web EJS và REST API. Quản lý nhân viên/phòng ban, chấm công, đơn nghỉ phép, duyệt nghỉ, thông báo và audit. Source được mở rộng từ bài Inventory Week 7 theo yêu cầu; là project học tập có AI hỗ trợ.
 
+## Hướng dẫn cho người chuyển từ Laravel
+
+Đọc [HUONG-DAN-LARAVEL-SANG-NODEJS.txt](HUONG-DAN-LARAVEL-SANG-NODEJS.txt): so sánh trực tiếp với source DJI, giải thích từng file và luồng Query/Command, có lệnh chạy. [Các source DJI đã tham chiếu](docs/DJI-SOURCE-REVIEW.txt).
+
 ## Mở web ngay
 
 ```sh

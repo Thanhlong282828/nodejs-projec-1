@@ -17,7 +17,7 @@ npm run migrate:status
 npm run cli -- users
 ```
 
-Đọc [migration](../database/migrations/001-hrm-core.js), [model và association](../src/models/index.js), [employee routes](../src/modules/employees/routes.js), [controller](../src/modules/employees/controller.js), [service](../src/modules/employees/service.js). Tự giải thích include, transaction, lock và constraint. `migrate:undo` yêu cầu `--confirm-data-loss`; không dùng trên dữ liệu cần giữ.
+Đọc [migration](../database/migrations/001-hrm-core.js), [model và association](../src/models/index.js), [employee routes](../src/modules/employees/routes/api.js), [controller](../src/modules/employees/controllers/EmployeeController.js), [service](../src/modules/employees/commands/EmployeeCommands.js). Tự giải thích include, transaction, lock và constraint. `migrate:undo` yêu cầu `--confirm-data-loss`; không dùng trên dữ liệu cần giữ.
 
 ## Bước 3 — Auth / Policy / Validation
 

@@ -1,0 +1,586 @@
+HƯỚNG DẪN TỪ LARAVEL DJI SANG NODE.JS / EXPRESS
+Project: PeopleFlow HRM — nodejs-projec-1
+Ngày cập nhật: 26/10/2026
+Thư mục: ~/Desktop/xinviec/weeksevenfileone
+
+ĐỌC PHẦN NÀO TRƯỚC?
+Bạn đã biết Laravel, nên đọc mục 1 → 2 → 4 → 5 trước.
+Hiểu được luồng đọc/ghi nhân viên rồi mới đọc queue, realtime và Docker.
+Đây là hướng dẫn theo chính source project của bạn, không yêu cầu học lại backend từ số 0.
+
+1. MÌNH ĐÃ LẤY GÌ TỪ DỰ ÁN DJI CỦA BẠN?
+========================================
+Mình đã đọc project ~/Desktop/laraveldji/admin và xem cấu trúc main.
+Admin DJI dùng nwidart modules, Module + CQRS và controller gửi Query/Command.
+Các file tham chiếu chính:
+  Modules/Employee/app/Presentation/Http/Controllers/EmployeeController.php
+  Modules/Employee/app/Application/Queries/GetEmployeeList/GetEmployeeListQuery.php
+  Modules/Employee/app/Application/Queries/GetEmployeeList/GetEmployeeListHandler.php
+  Modules/Employee/app/Application/Commands/CreateEmployee/CreateEmployeeCommand.php
+  Modules/Employee/app/Policies/EmployeePolicy.php
+  Modules/Core/app/Application/Buses/QueryBusInterface.php
+  Modules/Core/app/Application/Buses/CommandBusInterface.php
+  Modules/Leave/app/Presentation/Http/Requests/StoreLeaveRequest.php
+
+Theo lựa chọn của bạn, bản Node giữ nguyên nghiệp vụ HRM, URL từng thao tác,
+màu xanh dương, MySQL và các dịch vụ hiện có. Nâng cấp lần này là tổ chức code.
+Code DJI là tài liệu tham khảo; dữ liệu, tài khoản và cấu hình DJI vẫn thuộc project DJI.
+Các nghiệp vụ như payroll, hợp đồng, kho và bán hàng chưa phải chức năng của HRM Node này.
+
+Điểm cần phân biệt:
+- DJI có company/branch scope, TenantAccessService và permission riêng.
+- HRM Node hiện là một workspace, kiểm tra role admin/hr/employee và ownership.
+  EmployeePolicy Node chưa tương đương toàn bộ Spatie permission/multi-company của DJI.
+- DJI có thể tách tạo hồ sơ và tạo account. Node hiện vẫn tạo user kèm employee,
+  đúng luồng đã có trước khi tổ chức lại source.
+- Đây không phải port 1:1 toàn bộ ERP DJI; là cách đặt các phần quen thuộc vào Node.
+
+2. NODE, EXPRESS VÀ CẤU TRÚC LARAVEL TƯƠNG ỨNG
+============================================
+PHP                 → JavaScript (ngôn ngữ)
+PHP runtime         → Node.js (môi trường chạy)
+Laravel             → Express + các thư viện được chọn
+Composer            → npm
+composer.json       → package.json
+composer.lock       → package-lock.json
+vendor/             → node_modules/
+bootstrap/app.php   → src/app.js
+routes/web.php      → src/routes/web.js
+routes/api.php      → src/routes/api.js
+Module controller   → src/modules/.../controllers/
+FormRequest         → src/modules/.../requests/ (Zod)
+Eloquent Model      → src/modules/.../models/ (Sequelize)
+Policy/Gate         → src/modules/.../policies/ + src/core/authorization.js
+Service Provider    → src/providers/HrmServiceProvider.js
+Query/Handler       → src/modules/.../queries/ + repositories/
+Command/Handler     → src/modules/.../commands/
+Blade               → src/views/*.ejs
+Migration           → database/migrations/*.js (Umzug)
+Artisan             → npm run cli -- TEN_LENH
+Queue job           → BullMQ job + notification worker
+Redis queue driver  → Redis trong Compose
+Scheduler           → src/scheduler.js, process riêng
+Laravel Event       → src/events/index.js + transactional outbox
+Observer            → src/observers/audit-observer.js (Sequelize hooks)
+Cache               → src/lib/redis.js
+Reverb/broadcast    → Socket.IO trong src/server.js
+Mail/Notification   → services/notifications + Nodemailer/Mailpit
+PHPUnit             → node:test + Supertest + integration tests
+Herd/Nginx          → Node HTTP server, phía trước có Nginx Docker
+
+Express gọn hơn Laravel: nó cung cấp routing, middleware, request/response.
+Cấu trúc module, bus và provider dưới đây là code của project, không phải tính năng
+Express tự tạo. Khi gặp file HrmServiceProvider, đừng nghĩ Express tự có container
+và auto-discovery như Laravel; project đăng ký handler bằng tay rất rõ ràng.
+
+3. BẢN ĐỒ THƯ MỤC MỚI
+======================
+src/
+  app.js                         Ghép middleware và routes; không gọi ORM.
+  server.js                      Mở cổng HTTP + Socket.IO.
+  config.js                      Đọc và kiểm tra cấu hình môi trường.
+  routes/
+    api.js                       Ghép API routes của các module.
+    web.js                       Ghép HTML routes của các module.
+  core/
+    MessageBus.js                QueryBus.ask(), CommandBus.dispatch().
+    authorization.js             authorize(Policy, action).
+    route-list.js                Hỗ trợ lệnh xem danh sách route.
+  providers/
+    HrmServiceProvider.js        Đăng ký Query/Command Handler và observer.
+  modules/
+    employees/
+      routes/api.js              URL API riêng list/detail/create/update/delete.
+      routes/web.js              URL HTML /employees/list.
+      controllers/EmployeeController.js      Trả JSON.
+      controllers/EmployeeWebController.js   Render HTML.
+      requests/EmployeeRequest.js            Validation đầu vào.
+      policies/EmployeePolicy.js             Ai được thực hiện thao tác.
+      queries/EmployeeQueries.js             DTO Query + handler đọc.
+      repositories/EmployeeReadRepository.js SELECT/COUNT qua ORM.
+      commands/EmployeeCommands.js           DTO Command + nghiệp vụ ghi.
+      models/Employee.js                    Định nghĩa ORM của bảng hrm_employees.
+    departments/                 Phòng ban, cùng cách chia.
+    leaves/                      Nghỉ phép, cùng cách chia.
+    attendance/                  Chấm công, cùng cách chia.
+    auth/                        Đăng nhập / đăng xuất / profile.
+    dashboard/                   Query số liệu tổng quan.
+    audit/                       Query nhật ký và Audit model.
+    notifications/               Query sang service thông báo.
+    system/                      Health và tình trạng vận hành.
+    core/models/                 Outbox và DailyRun của hạ tầng.
+  models/index.js                Registry + associations giữa các model.
+  views/                         Template EJS hiện có, giữ giao diện xanh dương.
+  middleware/auth.js             Xác thực JWT, CSRF, same-origin.
+  lib/                           db, Redis/cache, ngày giờ, response/error helpers.
+  events/                        Outbox + sự kiện sau commit.
+  queue/                         Producer / dispatcher BullMQ.
+  observers/                     Audit hooks.
+  scheduler.js                   Relay outbox, daily digest.
+
+database/migrations/             Schema MySQL theo phiên bản.
+public/                          CSS/JS trình duyệt.
+services/notifications/          Microservice độc lập, package và DB riêng.
+scripts/                         CLI, launcher và kiểm tra end-to-end.
+test/                            Architecture + dependency + integration tests.
+legacy/inventory/                Source học Week 7 trước khi nâng HRM.
+
+Các service.js/controller.js/routes.js kiểu phẳng cũ trong module đã được thay
+bằng thư mục trên. Không giữ hai bản business logic chạy song song.
+src/lib/validation.js chỉ là facade export để import cũ trong test/helper còn hoạt động;
+quy tắc EmployeeRequest, LoginRequest... thực sự nằm ở module sở hữu nó.
+
+4. VÍ DỤ 1: XEM DANH SÁCH NHÂN VIÊN
+====================================
+Trong DJI Laravel bạn có:
+  $this->queries->ask(new GetEmployeeListQuery($companyId, $filters));
+
+Trong HRM Node bạn đọc theo thứ tự sau:
+
+Bước 1: src/modules/employees/routes/api.js
+  employeeRoutes.get(
+    '/api/employees/list',
+    authorize(EmployeePolicy, 'view'),
+    c.list
+  );
+
+So sánh Laravel:
+  Route::get('/...', [EmployeeController::class, 'index'])->middleware(...);
+
+get() là GET. URL có /list để nói rõ thao tác, theo đúng lựa chọn của bạn.
+authorize() là middleware quyền. c.list là hàm controller; truyền hàm, không gọi c.list().
+
+Bước 2: src/modules/employees/controllers/EmployeeController.js
+  data(res, await queryBus.ask(new GetEmployeeListQuery(req.query)));
+
+So sánh:
+  $request->query()             → req.query
+  new GetEmployeeListQuery()   → vẫn là một object yêu cầu đọc
+  $queries->ask(...)           → queryBus.ask(...)
+  response()->json(...)        → data(res, ...), bên trong dùng res.json()
+
+Bước 3: src/modules/employees/queries/EmployeeQueries.js
+  GetEmployeeListQuery giữ filters.
+  queryHandlers ghép Query này với repository.list(filters).
+
+Query không phải câu SQL. Nó chỉ diễn đạt: "tôi muốn xem danh sách nhân viên
+với bộ lọc này". Handler quyết định gọi repository nào.
+
+Bước 4: src/providers/HrmServiceProvider.js
+  queryBus.register(type, handler);
+
+So sánh DJI: provider đăng ký cách xử lý một Query.
+Bus tra Map theo lớp của object Query. Chưa đăng ký → lỗi wiring, không tự đoán handler.
+Provider chạy một lần khi app khởi động. Không chạy lại cho từng request.
+
+Bước 5: src/modules/employees/repositories/EmployeeReadRepository.js
+  Employee.findAndCountAll({where, include, order, limit, offset});
+
+So sánh Eloquent:
+  Employee::with(['user','department'])->where(...)->paginate(10);
+
+include tương tự eager loading bằng with().
+where là điều kiện. order là sắp xếp. limit/offset là phân trang.
+findAndCountAll trả rows và count; repository chuẩn hóa thành items và pagination.
+
+Bước 6: src/modules/employees/models/Employee.js
+  db.define('Employee', {...}, options('hrm_employees'));
+
+So sánh $table = 'hrm_employees' và khai báo thuộc tính/model Eloquent.
+Quan hệ belongsTo(User/Department) được nối tại src/models/index.js.
+ORM vẫn đọc MySQL thật, không phải mảng giả hoặc mock.
+
+Tóm luồng đọc:
+  GET URL → Auth/CSRF pipeline → Policy → Controller
+  → QueryBus → Query Handler → Read Repository → Sequelize → MySQL → JSON.
+
+Nếu vào trang HTML /employees/list, EmployeeWebController nhận cùng Query,
+đồng thời lấy options phòng ban rồi res.render('employees', ...).
+Web và API dùng chung logic đọc, khác cách trình bày kết quả.
+
+5. VÍ DỤ 2: THÊM NHÂN VIÊN
+==========================
+Laravel DJI:
+  Controller → FormRequest → CreateEmployeeCommand → Handler/Repository
+  → DB::transaction → Domain Event → Redirect/View.
+
+Node HRM:
+  POST /api/employees/create
+  → authenticate
+  → csrf nếu client dùng cookie
+  → authorize(EmployeePolicy, 'create')
+  → EmployeeController.create
+  → commandBus.dispatch(new CreateEmployeeCommand(req.user, req.body))
+  → EmployeeCommands.js xử lý
+  → employeeSchema.parse(input)
+  → transaction tạo User + Employee + audit + outbox
+  → commit
+  → publish event, invalidate cache, phát Socket.IO
+  → JSON status 201.
+
+Mở 4 file theo thứ tự:
+  src/modules/employees/controllers/EmployeeController.js
+  src/modules/employees/commands/EmployeeCommands.js
+  src/modules/employees/requests/EmployeeRequest.js
+  src/modules/employees/models/Employee.js
+
+Command là "hãy làm việc này", khác Query là "cho tôi xem dữ liệu".
+CreateEmployeeCommand mang actor và input, không tự chạy SQL trong constructor.
+Handler của Command mới thực hiện nghiệp vụ.
+
+Object.freeze(this) giúp không gán lại các thuộc tính của DTO ở lớp ngoài.
+Đây là shallow freeze, không phải cơ chế readonly sâu hoặc một hệ thống bảo mật.
+Không log Command đăng nhập/tạo account vì input có password.
+
+FormRequest:
+  Laravel: $request->validated()
+  Node:    employeeSchema.parse(input)
+
+Ở HRM này, Request schema kiểm tra name,
+email, password, code, departmentId, position, joinedOn, salary, role và status.
+Sai dữ liệu ném ZodError; error middleware đổi thành 422.
+
+Một số tên field khác DJI:
+  DJI employee_code    → Node Employee.code
+  DJI full_name        → Node User.name
+  DJI work_email       → Node User.email trong cấu trúc HRM hiện tại
+  DJI join_date        → Node Employee.joinedOn
+  DJI employment_status→ Node Employee.status (active/inactive)
+
+Không đổi tên field chỉ để giống PHP rồi làm lệch migration hiện có.
+Trong DB, underscored mapping đổi userId thành user_id, joinedOn thành joined_on.
+
+Transaction:
+  Laravel: DB::transaction(function () { ... });
+  Node:    await db.transaction(async transaction => { ... });
+
+Mỗi create/update cần tham số {transaction} để tham gia đúng transaction đó.
+Bỏ tham số có thể làm một bản ghi commit riêng trong khi phần còn lại rollback.
+Foreign key sai phải rollback cả tài khoản vừa tạo; integration test có kiểm tra.
+Xóa nhân viên ở API hiện là vô hiệu hóa, giữ lịch sử, giống hành vi HRM trước refactor.
+
+6. AUTHENTICATION, AUTHORIZATION VÀ OWNERSHIP
+===========================================
+Authentication: người đang gọi là ai?
+  Laravel auth middleware → Node authenticate() trong src/middleware/auth.js.
+  Password Laravel Hash   → bcrypt.hash()/bcrypt.compare() trong AuthCommands.
+  HRM Node dùng JWT cookie HttpOnly hoặc Authorization: Bearer TOKEN.
+
+Authorization: người đó được làm gì?
+  DJI EmployeePolicy + permission/tenant → Node EmployeePolicy + authorize().
+  Route gọi authorize(EmployeePolicy, 'update') trước controller.
+  HR không được nâng người khác thành admin, các điều kiện này vẫn được giữ.
+
+Ownership / trạng thái bản ghi:
+  Nhân viên chỉ xem leave/attendance của mình.
+  Người khác không được hủy đơn của bạn.
+  Quản lý không tự duyệt đơn của mình.
+  Đơn đã xử lý không được duyệt lần hai.
+Các điều kiện này nằm trong read repository / command nghiệp vụ, không chỉ ẩn nút trên UI.
+
+File cần đọc:
+  src/modules/auth/commands/AuthCommands.js
+  src/modules/auth/controllers/AuthController.js
+  src/modules/employees/policies/EmployeePolicy.js
+  src/modules/leaves/policies/LeavePolicy.js
+  src/modules/leaves/commands/LeaveCommands.js
+  src/middleware/auth.js
+
+Policy ở đây là object JS với các hàm, không phải class PHP hay Spatie database.
+Tên action trên route phải tồn tại trong Policy; architecture test kiểm tra điều đó.
+Logout tăng tokenVersion, thu hồi token cũ của user. Đổi password/role/trạng thái
+cũng tiếp tục thu hồi phiên như trước khi refactor.
+
+7. PHP ĐỒNG BỘ VÀ JAVASCRIPT ASYNC: PHẦN BẠN CẦN CHÚ Ý NHẤT
+===========================================================
+PHP quen thuộc:
+  $employee = Employee::find($id);
+
+Node:
+  const employee = await Employee.findByPk(id);
+
+findByPk trả Promise. await chờ Promise settle và nhường thời gian chờ I/O
+cho Node xử lý việc khác; không có nghĩa CPU nặng tự chạy ở thread riêng.
+
+Ví dụ trong controller:
+  export const list = async (req, res) => {
+    const result = await queryBus.ask(new GetEmployeeListQuery(req.query));
+    return data(res, result);
+  };
+
+async làm hàm trả Promise. Thiếu await có thể làm result là Promise thay vì dữ liệu.
+Error trong Promise cần được await/return để đi đúng luồng xử lý lỗi.
+Express 5 chuyển rejection của async route handler về error middleware.
+Không viết response lần hai sau khi đã gửi 204 hoặc JSON.
+
+Một số cú pháp quen nhau:
+  $user->name             → user.name
+  $request->input('name')  → req.body.name
+  $request->route('id')    → req.params.id
+  $request->query('page')  → req.query.page
+  foreach ($items as $x)   → for (const x of items)
+  ['name' => 'An']         → {name: 'An'}
+  $value ?? 'default'      → value ?? 'default'
+  use Namespace\Class    → import {Class} from './file.js'
+
+Trong ESM của project, import relative phải đúng đường dẫn và có .js.
+Import là khai báo phụ thuộc file; Express không tự tìm namespace/autoload theo PSR-4.
+
+8. VIEW WEB, JSON VÀ BLADE/EJS
+==============================
+Laravel:
+  return view('employees.index', ['items' => $items]);
+  {{ $employee->name }}
+  @foreach($items as $employee) ... @endforeach
+
+Node:
+  res.render('employees', {result});
+  <%= e.user.name %>
+  <% for (const e of result.items) { %> ... <% } %>
+
+<%= ... %> escape dữ liệu hiển thị, gần với {{ ... }} của Blade.
+<%- ... %> render raw: chỉ dùng cho include/markup đã tin cậy, không cho dữ liệu tùy ý.
+src/views vẫn là thư mục view thật. Giao diện xanh dương không đổi trong lần này.
+
+Trang /employees/list trả HTML; /api/employees/list trả JSON.
+JavaScript ở public/js/app.js đọc form và gọi API create/update/delete riêng.
+JSON dùng cho cả website và mobile; nó không giới hạn ở ứng dụng nhắn tin/mobile.
+
+9. QUEUE, QUEUE BACKEND, EVENT, OBSERVER VÀ SCHEDULER
+==================================================
+Laravel dispatch(Job)      → BullMQ Queue.add(...)
+Laravel queue driver Redis→ Redis queue backend
+Laravel queue:work/Horizon→ Notification worker riêng (không phải Express tự gửi mail)
+Laravel schedule:work     → npm run schedule, process Node riêng
+Laravel Event             → event nội bộ + outbox event
+Laravel Observer          → Sequelize afterCreate/afterUpdate/afterDestroy hook
+
+File đọc theo thứ tự:
+  src/modules/employees/commands/EmployeeCommands.js
+  src/events/index.js
+  src/modules/core/models/Outbox.js
+  src/queue/index.js
+  src/scheduler.js
+  services/notifications/src/server.js
+
+User + employee + audit + outbox được ghi cùng transaction.
+Sau commit mới phát realtime và xóa cache. Relay đọc outbox và thêm job vào Redis.
+Notification service nhận job rồi gửi mail bằng Nodemailer vào Mailpit.
+Redis ngừng thì sự kiện pending vẫn còn trong MySQL để relay thử tiếp.
+
+Event và Observer khác nhau:
+- Event diễn đạt hành động như employee.created / leave.decided.
+- Observer nghe vòng đời ORM và ghi audit tự động.
+- Queue là cơ chế xử lý nền; Redis là nơi giữ queue; worker là process thực thi job.
+- Scheduler quyết định lúc nào chạy relay/digest, không phải worker.
+
+Lịch hiện có: relay mỗi 10 giây; HR digest 08:00 thứ Hai–Sáu, giờ Việt Nam.
+Có CLI chạy thử ngay. SMTP là at-least-once, không cam kết exactly-once khi crash
+đúng lúc gửi xong nhưng chưa ghi sent; eventId/Message-ID giúp nhận diện và hạn chế trùng.
+
+10. CACHE, REALTIME VÀ MICROSERVICE
+==================================
+Cache::remember()          → cached() trong src/lib/redis.js
+Cache::forget()            → invalidate() sau mutation
+Reverb/broadcast          → Socket.IO trong src/server.js và public/js/realtime.js
+
+Dashboard dùng Redis cache 30 giây và xóa cache khi nghiệp vụ thay đổi.
+Redis cache lỗi thì loader vẫn đọc MySQL. Header X-Cache cho biết HIT/MISS/BYPASS.
+Socket phải đăng nhập, manager room khác user room; payload không chứa hồ sơ/lương.
+Realtime báo có dữ liệu mới, không tự reload form đang nhập của bạn.
+
+Notification service có process, package.json, migration, DB và DB user riêng.
+HRM core đọc thông báo qua HTTP nội bộ có service key.
+Tách module trong một app không tự động biến thành microservice:
+chỉ notification là service tách riêng trong kiến trúc hiện tại.
+
+11. LỆNH LARAVEL ↔ NODE ĐỂ BẠN TỰ CHẠY
+=======================================
+Mở Terminal tại project:
+  cd ~/Desktop/xinviec/weeksevenfileone
+
+Cài dependency:
+  Laravel: composer install
+  Node:    npm ci
+
+Xem route:
+  Laravel: php artisan route:list
+  Node:    npm run cli -- route:list
+
+Migration:
+  Laravel: php artisan migrate
+  Node:    npm run migrate
+  Kiểm tra: npm run migrate:status
+
+Seed demo (chỉ khi cần khởi tạo môi trường học):
+  Laravel: php artisan db:seed
+  Node:    npm run seed
+
+Chạy test:
+  Laravel: php artisan test
+  Node:    npm test
+
+Worker:
+  Laravel: php artisan queue:work
+  Node:    cd services/notifications && npm start
+
+Scheduler:
+  Laravel: php artisan schedule:work
+  Node:    npm run schedule
+  Chạy một lượt để kiểm tra: npm run schedule:run
+
+Xem và retry job lỗi:
+  npm run cli -- queue:failed
+  npm run cli -- queue:retry JOB_ID
+
+Laravel make:controller / make:model:
+  Project Express hiện không có generator tương đương. Tạo file trong đúng module,
+  đặt class/hàm rõ tên và đăng ký handler ở HrmServiceProvider.
+
+Lệnh CLI route:list đọc route stack Express 5 để liệt kê route thật, không dựa vào
+một danh sách URL viết tay khác source. Đây là helper của project, không phải Artisan.
+
+12. MỞ PROJECT BẰNG DOCKER (DỄ NHẤT)
+====================================
+Bật Docker Desktop, sau đó:
+  cd ~/Desktop/xinviec/weeksevenfileone
+  sh scripts/start-hrm.sh
+
+Mở:
+  http://localhost:8087
+  http://localhost:8037  (Mailpit xem email thử)
+
+Tài khoản demo:
+  Admin:     admin@hrm.local
+  HR:        hr@hrm.local
+  Nhân viên: employee@hrm.local
+  Mật khẩu demo chung: HrmDemo123!
+
+Node không chạy bằng PHP của Herd. Nginx Docker nhận request :8087 rồi chuyển
+đến Express. Nếu chỉ chạy Node trực tiếp thì cổng mặc định là :3057.
+
+Các DB hiện có:
+  HRM core:      week7_hrm
+  Notification: week7_hrm_notifications
+  MySQL port:   3377
+
+Lần tổ chức lại source này không đổi schema nên không tạo migration giả.
+Dữ liệu MySQL vẫn ở volume cũ. Migration phải dùng khi bạn thực sự thêm/sửa bảng/cột.
+
+Xem service:
+  docker compose --profile full ps
+
+Xem log:
+  docker compose --profile full logs --tail=50 app notifications scheduler web
+
+Dừng phần app, giữ dữ liệu:
+  docker compose --profile full stop app notifications scheduler web
+
+Không dùng docker compose down -v khi còn cần dữ liệu trong volume.
+
+13. CHẠY NODE TRỰC TIẾP ĐỂ SỬA CODE
+===================================
+Dừng app/worker Docker trước để chỉ dùng một chế độ khi học:
+  cd ~/Desktop/xinviec/weeksevenfileone
+  docker compose --profile full stop app notifications scheduler web
+  docker compose up -d --wait mysql redis mailpit
+  npm ci
+  node scripts/init-env.mjs
+  npm run dev
+
+Terminal thứ hai:
+  cd ~/Desktop/xinviec/weeksevenfileone/services/notifications
+  npm ci
+  npm start
+
+Terminal thứ ba:
+  cd ~/Desktop/xinviec/weeksevenfileone
+  npm run schedule
+
+Web local: http://localhost:3057
+.env của core/service đã có trên máy. Máy clone mới cần infra:setup, migrate/seed
+và migration của notification như docs/HRM-START.md hướng dẫn.
+File .env là cấu hình local được ignore, không lấy secrets từ DJI sang Node.
+
+14. CÁCH TỰ KIỂM TRA SAU KHI ĐỌC CODE
+====================================
+Bài 1 — Đọc:
+  Mở route list → controller → GetEmployeeListQuery → repository → Employee model.
+  Giải thích từng file làm gì, không cần nhớ thuộc lòng cú pháp.
+
+Bài 2 — Ghi:
+  Đăng nhập admin, thêm nhân viên có mã/email mới bằng form thật.
+  Tìm CreateEmployeeCommand và chỉ ra User, Employee, Audit, Outbox được ghi ở đâu.
+  Thử email trùng, department sai để thấy validation/rollback.
+
+Bài 3 — Quyền:
+  Đăng nhập employee, mở /employees/list → 403.
+  Tạo đơn nghỉ của chính mình; HR duyệt; user khác không được hủy đơn của bạn.
+
+Bài 4 — Async:
+  Tìm 3 hàm trả Promise và giải thích await đang chờ điều gì.
+  Không xóa await khỏi source đang dùng chỉ để thử; dùng test/file thử riêng.
+
+Bài 5 — Queue:
+  Thêm nhân viên hoặc xử lý đơn nghỉ qua luồng thật, chờ relay,
+  mở Mailpit và trang Thông báo. Không cần seed bản ghi để lấp bảng.
+
+Lệnh kiểm tra code:
+  npm test
+  npm run cli -- route:list
+
+End-to-end khi đang chạy notification service local:
+  npm run test:e2e
+
+Smoke Docker/Nginx khi đang chạy đủ stack:
+  docker compose exec -T app node scripts/docker-smoke.mjs
+
+Các test dùng dữ liệu có nhãn test/e2e trên môi trường MySQL Docker của bài học;
+không đổi DB trỏ sang Laravel DJI hoặc production rồi chạy test.
+
+15. KHI TỰ THÊM MỘT CHỨC NĂNG SAU NÀY
+======================================
+Ví dụ một thao tác mới thuộc nhân viên:
+  1) Xác định module employees sở hữu nghiệp vụ.
+  2) Input mới → thêm schema trong requests/EmployeeRequest.js.
+  3) Chỉ đọc → Query + ReadRepository; thay đổi dữ liệu → Command Handler.
+  4) Thêm Policy action tương ứng nếu có quyền mới.
+  5) Controller gửi Query/Command, không nhét SQL vào đó.
+  6) Khai báo URL riêng và HTTP method trong routes/api.js hoặc routes/web.js.
+  7) Đăng ký Query/Command Handler mới trong HrmServiceProvider.
+  8) Thêm migration nếu schema thực sự thay đổi.
+  9) Viết regression test, cập nhật tài liệu và chạy lại chức năng liên quan.
+
+Đừng tạo module mới chỉ vì bạn tạo một file mới. Module bám theo nghiệp vụ;
+controller, request, query, command và model là các vai trò bên trong module đó.
+
+16. LINK HỌC CHÍNH THỨC
+=======================
+Express Routing:
+https://expressjs.com/en/guide/routing/
+
+Sequelize truy vấn (đối chiếu với Eloquent):
+https://sequelize.org/docs/v6/core-concepts/model-querying-basics/
+
+Laravel Service Providers (đối chiếu với HrmServiceProvider):
+https://laravel.com/framework/docs/13.x/providers
+
+Node EventEmitter:
+https://nodejs.org/docs/latest-v22.x/api/events.html
+
+Trong VS Code: Cmd+click URL để mở. Với file code, Cmd+click đường dẫn import
+trong source để đi tiếp. Lệnh terminal ở hướng dẫn này cần copy vào Terminal.
+
+FILE NÊN MỞ ĐẦU TIÊN TRONG PROJECT
+==================================
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/routes/api.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/modules/employees/routes/api.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/modules/employees/controllers/EmployeeController.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/modules/employees/queries/EmployeeQueries.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/modules/employees/repositories/EmployeeReadRepository.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/modules/employees/commands/EmployeeCommands.js
+/Users/lahoathanh/Desktop/xinviec/weeksevenfileone/src/providers/HrmServiceProvider.js
+
+Bạn đã biết các khái niệm HTTP, database, validation, auth và nghiệp vụ từ Laravel.
+Việc cần luyện ở đây là đọc cách JavaScript/Express thể hiện lại những khái niệm đó,
+và giải thích được mỗi bước trong chính luồng HRM của mình.

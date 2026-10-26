@@ -1,104 +1,22 @@
-import { DataTypes as D } from "sequelize";
-import { db } from "../lib/db.js";
-const options = (tableName) => ({
-  tableName,
-  timestamps: true,
-  underscored: true,
-});
-// Model là lớp ORM. Association cho phép include phòng ban/user khi lấy nhân viên.
-export const User = db.define(
-  "User",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    name: D.STRING(120),
-    email: { type: D.STRING(191), unique: true },
-    password: D.STRING(255),
-    role: D.ENUM("admin", "hr", "employee"),
-    active: { type: D.BOOLEAN, defaultValue: true },
-    tokenVersion: { type: D.INTEGER, defaultValue: 0 },
-  },
-  options("hrm_users"),
-);
-export const Department = db.define(
-  "Department",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    name: { type: D.STRING(100), unique: true },
-    description: D.STRING(500),
-  },
-  options("hrm_departments"),
-);
-export const Employee = db.define(
-  "Employee",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    code: { type: D.STRING(30), unique: true },
-    userId: { type: D.INTEGER.UNSIGNED, unique: true },
-    departmentId: D.INTEGER.UNSIGNED,
-    position: D.STRING(120),
-    phone: D.STRING(30),
-    joinedOn: D.DATEONLY,
-    salary: D.DECIMAL(12, 2),
-    status: D.ENUM("active", "inactive"),
-  },
-  options("hrm_employees"),
-);
-export const Leave = db.define(
-  "Leave",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    employeeId: D.INTEGER.UNSIGNED,
-    type: D.ENUM("annual", "sick", "unpaid"),
-    startDate: D.DATEONLY,
-    endDate: D.DATEONLY,
-    reason: D.TEXT,
-    status: {
-      type: D.ENUM("pending", "approved", "rejected"),
-      defaultValue: "pending",
-    },
-    reviewedBy: D.INTEGER.UNSIGNED,
-    note: D.STRING(500),
-  },
-  options("hrm_leaves"),
-);
-export const Attendance = db.define(
-  "Attendance",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    employeeId: D.INTEGER.UNSIGNED,
-    workDate: D.DATEONLY,
-    checkIn: D.DATE,
-    checkOut: D.DATE,
-  },
-  options("hrm_attendances"),
-);
-export const Audit = db.define(
-  "Audit",
-  {
-    id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    actorId: D.INTEGER.UNSIGNED,
-    entity: D.STRING(60),
-    entityId: D.INTEGER.UNSIGNED,
-    action: D.STRING(30),
-    details: D.JSON,
-  },
-  options("hrm_audits"),
-);
-export const Outbox = db.define(
-  "Outbox",
-  {
-    id: { type: D.UUID, primaryKey: true, defaultValue: D.UUIDV4 },
-    topic: D.STRING(100),
-    payload: D.JSON,
-    status: { type: D.ENUM("pending", "queued"), defaultValue: "pending" },
-  },
-  options("hrm_outbox"),
-);
-export const DailyRun = db.define(
-  "DailyRun",
-  { id: { type: D.STRING(100), primaryKey: true } },
-  options("hrm_daily_runs"),
-);
+// Model registry: liên kết các model thuộc module, không chứa nghiệp vụ.
+import { User } from "../modules/auth/models/User.js";
+import { Department } from "../modules/departments/models/Department.js";
+import { Employee } from "../modules/employees/models/Employee.js";
+import { Leave } from "../modules/leaves/models/Leave.js";
+import { Attendance } from "../modules/attendance/models/Attendance.js";
+import { Audit } from "../modules/audit/models/Audit.js";
+import { Outbox } from "../modules/core/models/Outbox.js";
+import { DailyRun } from "../modules/core/models/DailyRun.js";
+export {
+  User,
+  Employee,
+  Department,
+  Leave,
+  Attendance,
+  Audit,
+  Outbox,
+  DailyRun,
+};
 User.hasOne(Employee, { foreignKey: "userId", as: "employee" });
 Employee.belongsTo(User, { foreignKey: "userId", as: "user" });
 Department.hasMany(Employee, { foreignKey: "departmentId", as: "employees" });

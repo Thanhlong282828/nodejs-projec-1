@@ -1,0 +1,34 @@
+THAM CHIẾU SOURCE LARAVEL DJI — 26/10/2026
+
+Phạm vi: đọc source admin/main tại ~/Desktop/laraveldji, nâng cấu trúc Node tại
+~/Desktop/xinviec/weeksevenfileone theo lựa chọn giữ nguyên chức năng HRM.
+
+Đã đọc:
+- admin/AGENTS.md: Module/CQRS, data ownership, policy/scope.
+- admin/composer.json, main/composer.json: khai báo Laravel và module package.
+- admin/Modules/Employee/routes/web.php: nghiệp vụ/module và route.
+- EmployeeController.php: QueryBusInterface, CommandBusInterface, DTO, FormRequest.
+- GetEmployeeListQuery.php / GetEmployeeListHandler.php: filters, query handler,
+  EmployeeReadRepositoryInterface.
+- GetEmployeeDetailQuery.php: companyId/id/sensitive read intent.
+- CreateEmployeeCommand.php: companyId/data/actorId command intent.
+- EmployeePolicy.php: permission + TenantAccessService.
+- Core Application Buses interfaces: ask(object), dispatch(object).
+- EmployeePortalReadService.php: read service tổng hợp từ nguồn canonical.
+- Leave StoreLeaveRequest.php: validation trước command.
+- EmployeeExportController.php và RestoreEmployeeHandler.php: tham khảo cách
+  tách hành vi; chức năng export/restore không thuộc lần thay đổi đã chọn.
+
+Node áp dụng:
+- Tách route web/API; controller chỉ điều phối bus + response/render.
+- Models nằm trong module, association registry riêng.
+- Request schema nằm trong module, policies được đặt tên.
+- Query/read repository tách command handler ghi; provider đăng ký handlers.
+- Giữ URL action-based, role/ownership hiện có, transaction/outbox và UI xanh dương.
+
+Ranh giới so sánh:
+- Đọc source là căn cứ thiết kế, chưa chạy test hoặc audit toàn bộ Laravel DJI.
+- Node giữ một workspace; không tuyên bố có multi-company/branch, permission DB,
+  payroll, hợp đồng, tài liệu doanh nghiệp hoặc commerce như DJI.
+- Lần thay đổi này không đổi schema, không lấy dữ liệu/config từ DJI.
+- Hướng dẫn người học nằm ở ../HUONG-DAN-LARAVEL-SANG-NODEJS.txt.
