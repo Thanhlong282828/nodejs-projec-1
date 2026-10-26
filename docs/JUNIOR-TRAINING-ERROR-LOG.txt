@@ -1,0 +1,18 @@
+ERROR LOG LUYỆN JUNIOR — CHƯA CHẤM
+
+Mục tiêu: phân biệt chưa hiểu concept với chỉ quên syntax.
+Không tự điền Correct khi chưa có câu trả lời/code của người học.
+
+Mẫu mỗi lượt:
+  Ngày:
+  Chủ đề / số mục trong hướng dẫn:
+  Câu hỏi hoặc requirement:
+  Câu trả lời/code ban đầu của tôi:
+  Kết quả: Correct / Partial / Incorrect / Chưa chấm
+  Loại gap: Concept / Syntax / Requirement / Debugging / Time / Communication
+  Evidence:
+  Phần tôi đã sửa và tự giải thích lại:
+  Retest:
+  Kết quả retest:
+
+Trạng thái ban đầu: chưa có bài trả lời được chấm trong bộ luyện này.

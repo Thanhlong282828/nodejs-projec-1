@@ -1,7 +1,9 @@
 # Mục lục project hiện tại — PeopleFlow HRM
 
-**Bắt đầu nếu mới từ Laravel:** [hướng dẫn TXT so sánh với DJI](../HUONG-DAN-LARAVEL-SANG-NODEJS.txt).
+**Bắt đầu nếu mới từ Laravel:** [40 cặp code PHP/Laravel ↔ JavaScript/Node](../HUONG-DAN-LARAVEL-SANG-NODEJS.txt).
 
+- [Đối chiếu kiến trúc DJI và HRM](HUONG-DAN-KIEN-TRUC-LARAVEL-NODEJS.txt)
+- [Error Log luyện phỏng vấn Junior](JUNIOR-TRAINING-ERROR-LOG.txt)
 - [Hướng dẫn bắt đầu](HRM-START.md)
 - [23 thành phần bạn yêu cầu](HRM-COMPONENTS.md)
 - [Kiến trúc](HRM-ARCHITECTURE.md)

@@ -4,7 +4,7 @@ HRM có giao diện web EJS và REST API. Quản lý nhân viên/phòng ban, ch�
 
 ## Hướng dẫn cho người chuyển từ Laravel
 
-Đọc [HUONG-DAN-LARAVEL-SANG-NODEJS.txt](HUONG-DAN-LARAVEL-SANG-NODEJS.txt): so sánh trực tiếp với source DJI, giải thích từng file và luồng Query/Command, có lệnh chạy. [Các source DJI đã tham chiếu](docs/DJI-SOURCE-REVIEW.txt).
+Đọc [HUONG-DAN-LARAVEL-SANG-NODEJS.txt](HUONG-DAN-LARAVEL-SANG-NODEJS.txt): 40 cặp code PHP/Laravel ↔ JavaScript/Node, trọng tâm Eloquent ↔ Sequelize, kèm câu phỏng vấn, bài tập và lộ trình luyện Junior. [Hướng dẫn cấu trúc](docs/HUONG-DAN-KIEN-TRUC-LARAVEL-NODEJS.txt) được giữ riêng. [Các source DJI đã tham chiếu](docs/DJI-SOURCE-REVIEW.txt).
 
 ## Mở web ngay
 
