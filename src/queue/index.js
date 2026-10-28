@@ -42,14 +42,24 @@ export async function dispatch() {
   }
   return sent;
 }
-export async function queueStats() {
-  return getQueue().getJobCounts(
-    "waiting",
-    "active",
-    "completed",
-    "failed",
-    "delayed",
-  );
+// Web metrics must not expose counts of jobs from another company.
+export async function queueStats(companyId) {
+  if (!Number.isSafeInteger(companyId) || companyId < 1)
+    throw new Error("Company scope required for queue metrics");
+  const result = {};
+  for (const state of ["waiting", "active", "completed", "failed", "delayed"]) {
+    let start = 0;
+    result[state] = 0;
+    while (true) {
+      const jobs = await getQueue().getJobs([state], start, start + 99);
+      result[state] += jobs.filter(
+        (job) => job.data.companyId === companyId,
+      ).length;
+      if (jobs.length < 100) break;
+      start += 100;
+    }
+  }
+  return result;
 }
 export async function closeQueue() {
   await queue?.close();

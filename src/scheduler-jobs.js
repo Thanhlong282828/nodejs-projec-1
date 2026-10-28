@@ -1,34 +1,43 @@
-import { Op } from "sequelize";
 import { db } from "./lib/db.js";
-import { DailyRun, Leave, User } from "./models/index.js";
+import { DailyRun, Leave, User, Company } from "./models/index.js";
 import { recordEvent } from "./events/index.js";
 import { dispatch } from "./queue/index.js";
 import { workDate } from "./lib/dates.js";
-// Unique key theo ngày làm cho daily digest chỉ được ghi outbox một lần/ngày dù có nhiều scheduler.
+import { loadAccess } from "./modules/access/access-context.js";
+import { can } from "./modules/access/permissions.js";
 export async function dailyDigest(date = workDate()) {
   try {
     return await db.transaction(async (transaction) => {
       await DailyRun.create({ id: `hr-digest-${date}` }, { transaction });
-      const pending = await Leave.count({
-        where: { status: "pending" },
-        transaction,
-      });
-      const managers = await User.findAll({
-        where: { role: { [Op.in]: ["admin", "hr"] }, active: true },
-        transaction,
-      });
-      for (const user of managers)
-        await recordEvent(
-          "hr.daily-digest",
-          {
-            recipient: user.email,
-            userId: user.id,
-            subject: `Tổng hợp nhân sự ${date}`,
-            text: `Hiện có ${pending} đơn nghỉ phép chờ duyệt. Vui lòng mở HRM để xử lý.`,
-          },
+      let pending = 0,
+        recipients = 0;
+      for (const company of await Company.findAll({ transaction })) {
+        const companyPending = await Leave.count({
+          where: { companyId: company.id, status: "pending" },
           transaction,
-        );
-      return { created: true, pending, recipients: managers.length };
+        });
+        pending += companyPending;
+        for (const user of await User.findAll({
+          where: { companyId: company.id, active: true },
+          transaction,
+        })) {
+          if (!(await loadAccess(user)) || !can(user, "leaves.update"))
+            continue;
+          await recordEvent(
+            "hr.daily-digest",
+            {
+              companyId: company.id,
+              recipient: user.email,
+              userId: user.id,
+              subject: `Tổng hợp nhân sự ${date}`,
+              text: `Công ty ${company.name}: ${companyPending} đơn nghỉ chờ duyệt.`,
+            },
+            transaction,
+          );
+          recipients++;
+        }
+      }
+      return { created: true, pending, recipients };
     });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError")
@@ -37,7 +46,5 @@ export async function dailyDigest(date = workDate()) {
   }
 }
 export async function runOnce() {
-  const digest = await dailyDigest();
-  const dispatched = await dispatch();
-  return { digest, dispatched };
+  return { digest: await dailyDigest(), dispatched: await dispatch() };
 }

@@ -1,3 +1,7 @@
+import { queryHandlers as companiesQueries } from "../modules/companies/queries/CompanyQueries.js";
+import { commandHandlers as companiesCommands } from "../modules/companies/commands/CompanyCommands.js";
+import { queryHandlers as accessQueries } from "../modules/access/queries/AccessQueries.js";
+import { commandHandlers as accessCommands } from "../modules/access/commands/AccessCommands.js";
 // Tương tự ServiceProvider::register/boot của Laravel: wiring, không chứa nghiệp vụ.
 import { queryBus, commandBus } from "../core/MessageBus.js";
 import { registerObservers } from "../observers/audit-observer.js";
@@ -41,6 +45,10 @@ export function bootHrm() {
   for (const [type, handler] of attendanceCommands)
     commandBus.register(type, handler);
   for (const [type, handler] of authCommands)
+    commandBus.register(type, handler);
+  for (const [type, handler] of [...companiesQueries, ...accessQueries])
+    queryBus.register(type, handler);
+  for (const [type, handler] of [...companiesCommands, ...accessCommands])
     commandBus.register(type, handler);
   registerObservers();
   booted = true;

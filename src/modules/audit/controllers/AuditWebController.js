@@ -5,5 +5,5 @@ export const index = async (req, res) =>
   res.render("audit", {
     title: "Nhật ký thay đổi",
     active: "audit",
-    rows: await queryBus.ask(new GetRecentAuditQuery()),
+    rows: await queryBus.ask(new GetRecentAuditQuery(req.user)),
   });

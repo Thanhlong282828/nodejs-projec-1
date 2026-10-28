@@ -1,3 +1,6 @@
+import { loadAccess } from "../../access/access-context.js";
+import { companyWhere } from "../../../core/tenant.js";
+import { can } from "../../access/permissions.js";
 // Command Handler: nghiệp vụ ghi + transaction + observer/outbox, tương tự DJI.
 import { Op } from "sequelize";
 import { db } from "../../../lib/db.js";
@@ -32,33 +35,42 @@ async function create(user, input) {
         "Khoảng ngày đã có đơn nghỉ chờ duyệt hoặc được duyệt.",
       );
     result = await Leave.create(
-      { ...values, employeeId: user.employee.id },
+      { ...values, ...companyWhere(user), employeeId: user.employee.id },
       { transaction, actorId: user.id },
     );
     const managers = await User.findAll({
-      where: { role: { [Op.in]: ["admin", "hr"] }, active: true },
+      where: { ...companyWhere(user), active: true },
       transaction,
     });
-    for (const manager of managers)
+    for (const manager of managers) {
+      if (!(await loadAccess(manager)) || !can(manager, "leaves.update"))
+        continue;
       await recordEvent(
         "leave.requested",
         {
           recipient: manager.email,
           subject: "Đơn nghỉ phép mới",
           text: `${user.name} xin nghỉ từ ${values.startDate} đến ${values.endDate}. Vui lòng mở HRM để xem và duyệt.`,
+          companyId: user.companyId,
           userId: manager.id,
         },
         transaction,
       );
+    }
   });
-  await publish({ topic: "leave.requested", employeeUserId: user.id });
+  await publish({
+    companyId: user.companyId,
+    topic: "leave.requested",
+    employeeUserId: user.id,
+  });
   return result;
 }
 async function decide(actor, id, input) {
   const values = decisionSchema.parse(input);
   let employeeUserId, result;
   await db.transaction(async (transaction) => {
-    const row = await Leave.findByPk(parseId(id), {
+    const row = await Leave.findOne({
+      where: { id: parseId(id), ...companyWhere(actor) },
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
@@ -80,18 +92,24 @@ async function decide(actor, id, input) {
         recipient: user.email,
         subject: "Kết quả đơn nghỉ phép",
         text: `Đơn nghỉ từ ${row.startDate} đến ${row.endDate}: ${values.status === "approved" ? "được duyệt" : "bị từ chối"}. Ghi chú: ${values.note}`,
+        companyId: actor.companyId,
         userId: user.id,
       },
       transaction,
     );
   });
-  await publish({ topic: "leave.decided", employeeUserId });
+  await publish({
+    companyId: actor.companyId,
+    topic: "leave.decided",
+    employeeUserId,
+  });
   return result;
 }
 async function remove(user, id) {
   let employeeUserId;
   await db.transaction(async (transaction) => {
-    const row = await Leave.findByPk(parseId(id), {
+    const row = await Leave.findOne({
+      where: { id: parseId(id), ...companyWhere(user) },
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
@@ -104,7 +122,11 @@ async function remove(user, id) {
     employeeUserId = user.id;
     await row.destroy({ transaction, actorId: user.id });
   });
-  await publish({ topic: "leave.cancelled", employeeUserId });
+  await publish({
+    companyId: user.companyId,
+    topic: "leave.cancelled",
+    employeeUserId,
+  });
 }
 
 export class CreateLeaveCommand {

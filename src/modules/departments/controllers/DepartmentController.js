@@ -8,7 +8,7 @@ import {
   DeleteDepartmentCommand,
 } from "../commands/DepartmentCommands.js";
 export const list = async (req, res) =>
-  data(res, await queryBus.ask(new GetDepartmentListQuery()));
+  data(res, await queryBus.ask(new GetDepartmentListQuery(req.user)));
 export const create = async (req, res) =>
   data(
     res,

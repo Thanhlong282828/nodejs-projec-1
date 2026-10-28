@@ -1,3 +1,9 @@
+# Cập nhật company/permission MySQL — 28/10/2026
+
+**41 tests pass, 0 fail**; E2E queue/mail/realtime pass. Migration 002 đã chạy và gán company/role cho 6 tài khoản cũ. Web :8087 đã rebuild, 10 trang HTML và API được smoke test. [Báo cáo mới](COMPANY-PERMISSION-VERIFICATION.txt) · [Hướng dẫn Laravel ↔ Node](COMPANY-PERMISSION-LARAVEL-NODEJS.txt).
+
+Các phần dưới là lịch sử kiểm chứng của những lần nâng cấp trước.
+
 # Kiểm chứng PeopleFlow HRM — 25/10/2026
 
 ## Đã thực hiện

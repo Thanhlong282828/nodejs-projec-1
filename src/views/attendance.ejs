@@ -6,8 +6,8 @@
 <p>Ghi nhận thời gian làm việc theo múi giờ Việt Nam.</p>
 </div>
 <div class="button-group">
-<button class="button primary" data-action="/api/attendance/check-in">◷ Check-in</button>
-<button class="button secondary" data-action="/api/attendance/check-out">Check-out →</button>
+<% if(can("attendance.checkIn")&&user.employeeId){ %><button class="button primary" data-action="/api/attendance/check-in">◷ Check-in</button><% } %>
+<% if(can("attendance.checkOut")&&user.employeeId){ %><button class="button secondary" data-action="/api/attendance/check-out">Check-out →</button><% } %>
 </div>
 </section>
 <section class="panel">
@@ -15,7 +15,7 @@
 <div>
 <h2>Lịch sử chấm công</h2>
 <p>
-<%= user.role==='employee'?'Thời gian làm việc của bạn.':'Theo dõi giờ vào và giờ ra của đội ngũ.' %>
+<%= !can('attendance.viewAll')?'Thời gian làm việc của bạn.':'Theo dõi giờ vào và giờ ra của đội ngũ.' %>
 </p>
 </div>
 </div>

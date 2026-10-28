@@ -28,7 +28,7 @@ Thử salary âm, email sai, endDate trước startDate → 422.
 
 [Code](../src/middleware/auth.js) · [Tài liệu chính thức](https://expressjs.com/en/guide/using-middleware.html)
 
-authenticate → csrf → role policy → controller.
+authenticate → csrf → permission policy (MySQL) → controller.
 
 ## 6. Authorization — RBAC + ownership
 
@@ -137,3 +137,5 @@ mysql, redis, mailpit, app, notifications, scheduler, web.
 [Code](../services/notifications/src/db.js) · [Tài liệu chính thức](https://microservices.io/patterns/data/transactional-outbox.html)
 
 Process/image/DB user riêng; giao tiếp async queue và internal HTTP có service key.
+
+Company/RBAC đã có migration 002, UI và account assignment: [hướng dẫn chi tiết](COMPANY-PERMISSION-LARAVEL-NODEJS.txt).

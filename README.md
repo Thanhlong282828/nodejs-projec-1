@@ -1,10 +1,12 @@
 # PeopleFlow HRM — Node.js / Express / MySQL
 
-HRM có giao diện web EJS và REST API. Quản lý nhân viên/phòng ban, chấm công, đơn nghỉ phép, duyệt nghỉ, thông báo và audit. Source được mở rộng từ bài Inventory Week 7 theo yêu cầu; là project học tập có AI hỗ trợ.
+HRM có giao diện web EJS và REST API. Có company, chức vụ và permission thật trong MySQL. Quản lý nhân viên/phòng ban, chấm công, đơn nghỉ phép, duyệt nghỉ, thông báo và audit. Source được mở rộng từ bài Inventory Week 7 theo yêu cầu; là project học tập có AI hỗ trợ.
 
 ## Hướng dẫn cho người chuyển từ Laravel
 
 Đọc [HUONG-DAN-LARAVEL-SANG-NODEJS.txt](HUONG-DAN-LARAVEL-SANG-NODEJS.txt): 40 cặp code PHP/Laravel ↔ JavaScript/Node, trọng tâm Eloquent ↔ Sequelize, kèm câu phỏng vấn, bài tập và lộ trình luyện Junior. [Hướng dẫn cấu trúc](docs/HUONG-DAN-KIEN-TRUC-LARAVEL-NODEJS.txt) được giữ riêng. [Các source DJI đã tham chiếu](docs/DJI-SOURCE-REVIEW.txt).
+
+Đọc thêm [Company & phân quyền MySQL — đối chiếu Laravel/Spatie ↔ Node](docs/COMPANY-PERMISSION-LARAVEL-NODEJS.txt). Admin quản lý trực tiếp tại [Công ty](http://localhost:8087/companies/list) và [Chức vụ & phân quyền](http://localhost:8087/access/list).
 
 ## Mở web ngay
 

@@ -5,6 +5,6 @@ import { DepartmentPolicy } from "../policies/DepartmentPolicy.js";
 export const webRoutes = Router();
 webRoutes.get(
   "/departments/list",
-  authorize(DepartmentPolicy, "create"),
+  authorize(DepartmentPolicy, "view"),
   controller.index,
 );

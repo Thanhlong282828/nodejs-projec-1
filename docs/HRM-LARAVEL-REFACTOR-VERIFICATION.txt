@@ -1,3 +1,8 @@
+GHI CHÚ 28/10/2026: báo cáo dưới ghi bằng chứng lần refactor 26/10.
+Sau đó đã thêm migration 002 company/role/permission MySQL và account assignments.
+Hướng dẫn sử dụng phần mới: COMPANY-PERMISSION-LARAVEL-NODEJS.txt.
+Kết quả kiểm chứng mới xem COMPANY-PERMISSION-VERIFICATION.txt.
+
 KIỂM CHỨNG TỔ CHỨC CODE THEO LARAVEL DJI — 26/10/2026
 
 Phạm vi đã chọn: giữ nguyên chức năng HRM, ưu tiên cấu trúc quen với Laravel.

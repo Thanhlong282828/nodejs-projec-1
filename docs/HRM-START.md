@@ -62,3 +62,11 @@ npm run schedule
 6. Admin mở Hệ thống xem queue/outbox. Dashboard dùng dữ liệu thật, không giả số thống kê.
 
 Nhân viên thường không được xem lương/danh sách của toàn công ty hoặc endpoint audit/system. Xóa nhân viên là vô hiệu hóa (giữ lịch sử). Phòng ban đang có nhân viên không xóa được.
+
+## Company và chức vụ/quyền
+
+Đăng nhập admin, mở [Công ty](http://localhost:8087/companies/list) để sửa thông tin hoặc tạo công ty mới kèm admin riêng. Mở [Chức vụ & phân quyền](http://localhost:8087/access/list) để tạo role, tick quyền và gán cho tài khoản. Có Cấp thêm/Thu hồi/Theo chức vụ cho mỗi permission. Tài khoản được sửa quyền cần đăng nhập lại.
+
+Company được lấy từ account xác thực. Một tài khoản hiện thuộc một company và một role. [Đối chiếu Laravel/Spatie ↔ Node, bảng MySQL và lệnh SQL](COMPANY-PERMISSION-LARAVEL-NODEJS.txt).
+
+Chạy kiểm thử toàn bộ khi Docker stack đang chạy: `sh scripts/test-hrm.sh`.

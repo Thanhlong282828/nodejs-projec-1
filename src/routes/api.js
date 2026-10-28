@@ -1,3 +1,5 @@
+import { apiRoutes as companies } from "../modules/companies/routes/api.js";
+import { apiRoutes as access } from "../modules/access/routes/api.js";
 // Tương tự routes/api.php: chỉ ghép route của các module, không có logic nghiệp vụ.
 import { Router } from "express";
 export { publicApiRoutes } from "../modules/auth/routes/api.js";
@@ -20,3 +22,6 @@ apiRoutes.use(dashboardRoutes);
 apiRoutes.use(auditRoutes);
 apiRoutes.use(notificationsRoutes);
 apiRoutes.use(systemRoutes);
+
+apiRoutes.use(companies);
+apiRoutes.use(access);

@@ -5,7 +5,7 @@
 <h1>Nghỉ phép</h1>
 <p>Theo dõi lịch nghỉ, giữ nhịp phối hợp cùng đội ngũ.</p>
 </div>
-<button class="button primary" data-open="leave-dialog">＋ Tạo đơn nghỉ</button>
+<% if(can("leaves.create")&&user.employeeId){ %><button class="button primary" data-open="leave-dialog">＋ Tạo đơn nghỉ</button><% } %>
 </section>
 <section class="panel">
 <form class="toolbar" method="get">
@@ -69,10 +69,10 @@
 <% } %>
 </td>
 <td>
-<% if(l.status==='pending'){if(user.role!=='employee'&&l.employee.user.id!==user.id){ %>
+<% if(l.status==='pending'){if(can('leaves.update')&&l.employee.user.id!==user.id){ %>
 <button class="text-button" data-decision="approved" data-id="<%= l.id %>">Duyệt</button>
 <button class="text-button danger" data-decision="rejected" data-id="<%= l.id %>">Từ chối</button>
-<% }if(l.employee.user.id===user.id){ %>
+<% }if(can('leaves.delete')&&l.employee.user.id===user.id){ %>
 <button class="text-button danger" data-delete="/api/leaves/delete/<%= l.id %>">Hủy đơn</button>
 <% }} %>
 </td>

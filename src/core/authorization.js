@@ -1,7 +1,4 @@
 import { HttpError } from "../lib/http.js";
-export const managers = (user) =>
-  Boolean(user) && ["admin", "hr"].includes(user.role);
-export const authenticated = (user) => Boolean(user);
 // Tương tự Laravel Gate::authorize / middleware can:action. Policy không truy vấn DB.
 export function authorize(policy, action) {
   return (req, res, next) => {

@@ -1,0 +1,205 @@
+COMPANY + ROLE + PERMISSION THẬT TRONG MYSQL — LARAVEL ↔ NODE.JS
+Cập nhật: 28/10/2026
+
+1. ĐANG DÙNG DATABASE NÀO?
+Database HRM: week7_hrm. MySQL Docker: 127.0.0.1:3377.
+Database notification riêng: week7_hrm_notifications.
+Thông tin kết nối application nằm trong .env; không đưa mật khẩu/token thật lên GitHub.
+Phân quyền ứng dụng được lưu trong bảng MySQL. Đây khác với GRANT của MySQL:
+- GRANT: tài khoản kỹ thuật week7_hrm được truy vấn schema nào.
+- RBAC của HRM: người đăng nhập admin@.../hr@... được dùng chức năng nào.
+Người dùng web không được tạo thành MySQL login riêng.
+
+2. CÁC BẢNG THẬT VÀ QUAN HỆ
+hrm_companies: id, name, code, address, email.
+hrm_roles: id, company_id, name, code, system_key.
+hrm_permissions: id, key, name; catalog 24 quyền dùng chung.
+hrm_role_permissions: role_id + permission_id; bảng nối M:N.
+hrm_user_permissions: user_id + permission_id + allowed; override riêng.
+hrm_users: có company_id + role_id; role legacy admin/hr/employee giữ tương thích.
+hrm_departments/employees/leaves/attendances/audits: có company_id.
+
+Company 1 — N Users / Roles / Departments / Employees.
+Role N — N Permission qua hrm_role_permissions.
+User N — 1 Role: mỗi tài khoản hiện có MỘT chức vụ truy cập.
+User N — N Permission qua override allowed=true/false.
+Chưa có nhiều company membership cho cùng tài khoản; vào công ty khác bằng email
+quản trị/tài khoản của công ty đó. Email tài khoản unique toàn hệ thống.
+Chưa có branch, payroll hoặc toàn bộ ERP DJI; company và RBAC là chức năng đã có.
+
+3. ĐỐI CHIẾU LARAVEL / SPATIE ↔ NODE HRM
+Laravel: Company extends Model.
+Node: export const Company = db.define('Company', ...).
+Model thật: src/modules/companies/models/Company.js.
+
+Laravel: $user->belongsTo(Company::class).
+Node: User.belongsTo(Company, {foreignKey:'companyId',as:'company'}).
+Registry thật: src/models/index.js.
+
+Laravel/Spatie: $role->syncPermissions(['employees.view']);
+Node (gọi qua CommandBus trong project):
+  await commandBus.dispatch(new UpdateRoleCommand(actor, roleId, {
+    name:'Trưởng nhóm', code:'team_lead', permissions:['employees.view']
+  }));
+Bên trong handler, transaction cập nhật hrm_roles và thay hàng trong
+hrm_role_permissions. Không chỉ sửa mảng JS trong bộ nhớ.
+File: src/modules/access/commands/AccessCommands.js.
+
+Laravel/Spatie: $user->assignRole('team_lead');
+Node: await commandBus.dispatch(new AssignAccessCommand(actor, userId, {
+  roleId, allow:[], deny:[]
+}));
+Ứng dụng này chỉ gán một role; không giả định giống mọi tính năng Spatie.
+Role phải thuộc cùng company với tài khoản và người cấp quyền.
+
+Laravel/Spatie: $user->can('employees.update');
+Node: can(req.user,'employees.update').
+Laravel: Gate::authorize('update',$employee).
+Node route: authorize(EmployeePolicy,'update').
+EmployeePolicy.update(user) gọi can(user,'employees.update').
+
+Laravel/Spatie cấp quyền trực tiếp thường có tính cộng thêm.
+Node HRM thêm cả allow/deny override: đây là quy tắc riêng, không phải khẳng định
+Spatie mặc định có deny giống vậy.
+Quyền hiệu lực = (quyền role + override allowed=true) - override allowed=false.
+
+4. LUỒNG CHECK QUYỀN THẬT MỖI REQUEST
+Login → xác minh bcrypt → loadAccess(user) đọc Role/Permission/override từ MySQL
+→ JWT. Token không chứa danh sách permission cố định.
+Request → authenticate → resolveToken → User hiện tại + tokenVersion
+→ loadAccess(user) đọc MySQL → req.user.permissions
+→ Policy theo permission → Controller → Query/Command → companyWhere(actor)
+→ SQL giới hạn company_id → response.
+loadAccess: src/modules/access/access-context.js.
+Scope: src/core/tenant.js.
+Không lấy companyId từ input/client làm phạm vi được phép.
+
+Khi lưu quyền qua màn hình/API, tokenVersion tăng: tài khoản liên quan phải login
+lại. Nếu quản trị sửa trực tiếp bảng permission bằng SQL, request kế tiếp vẫn đọc
+quyền mới từ DB với token hiện có (nhưng SQL trực tiếp không tự ghi audit hoặc
+thu hồi phiên, vì thế nên dùng UI/API trong thực tế).
+Seed chỉ khởi tạo role chưa có; chạy lại seed không reset checkbox bạn đã sửa.
+
+5. GẮN QUYỀN VÀO TÀI KHOẢN TRÊN WEB
+Mở: http://localhost:8087/login
+Admin: admin@hrm.local / HrmDemo123! (demo local).
+Mở: http://localhost:8087/access/list
+- Tạo chức vụ "Trưởng nhóm", code team_lead.
+- Tick dashboard.view, departments.view, employees.view,
+  leaves.view, leaves.create, leaves.delete,
+  attendance.view, attendance.checkIn, attendance.checkOut.
+- Nếu cần xem/duyệt đơn người khác: thêm leaves.viewAll + leaves.update.
+- Trong "Gán chức vụ và quyền cho tài khoản", chọn tài khoản nam@hrm.local
+  hoặc tạo một nhân viên thử riêng, rồi chọn chức vụ vừa tạo.
+- Mỗi quyền có Theo chức vụ / Cấp thêm / Thu hồi. Chọn Thu hồi employees.view
+  để kiểm tra deny thắng quyền đã tick ở role.
+- Bấm Gán quyền tài khoản. Đăng nhập lại tài khoản đó ở cửa sổ khác.
+- Thử gọi /api/employees/list: có quyền 200, thiếu quyền 403.
+- Gỡ override bằng cách chọn Theo chức vụ rồi lưu.
+Không có check cứng "nhân viên luôn bị cấm" ở EmployeePolicy nữa;
+người role legacy employee vẫn xem được danh sách khi được cấp employees.view.
+
+Mặc định dữ liệu cũ:
+admin@hrm.local → role Admin trong công ty PeopleFlow → 24 quyền.
+hr@hrm.local → role HR → 19 quyền, không quản lý company/access/system.
+employee@hrm.local, mai@..., nam@..., linh@... → role Employee → 8 quyền cá nhân.
+Đây là mặc định khi nâng cấp/seed; khi bạn chỉnh DB/UI thì quyền hiệu lực thay đổi.
+Tên job position "Backend Developer" chỉ mô tả công việc, không tự cấp quyền.
+employees.view hiện cho đọc cả lương trong danh sách; hãy chỉ cấp cho người phù hợp.
+
+6. TẠO VÀ KIỂM TRA CÔNG TY
+Mở: http://localhost:8087/companies/list
+Sửa tên/mã/email/địa chỉ công ty đang đăng nhập.
+Form Tạo công ty mới yêu cầu cả tên/email/password của admin đầu tiên.
+Company mới có bộ role riêng và không có sẵn phòng ban/nhân viên.
+Đăng xuất rồi đăng nhập admin mới; tạo phòng ban, nhân viên cho company mới.
+Danh sách company chỉ trả company đang đăng nhập, không liệt kê dữ liệu công ty khác.
+Chưa có xóa công ty/role trên UI: không xóa nhầm dữ liệu HRM đang có lịch sử.
+
+7. CHỐNG TRUY CẬP CHÉO COMPANY
+Laravel ví dụ: Employee::where('company_id', auth()->user()->company_id)->findOrFail($id).
+Node tương ứng:
+  const employee = await Employee.findOne({
+    where:{id:parseId(id), ...companyWhere(actor)}
+  });
+  if(!employee) throw new HttpError(404,'Không tìm thấy nhân viên.');
+Không dùng Employee.findByPk(id) đơn lẻ khi ID được client gửi tới và chưa có scope.
+ID khác company trả 404; FK input department/role khác company trả 422.
+Không có quyền thao tác trả 403; chưa login/token cũ bị thu hồi trả 401.
+Composite FK trong MySQL chặn ghép user/department/role khác company kể cả ghi SQL.
+Tên department và code employee unique theo company; email account vẫn unique global.
+Cache key gồm company + user + permission; mutation invalidate dashboard.
+Realtime kiểm tra lại MySQL tại lúc phát event, chỉ gửi tới company và quyền phù hợp.
+Mail xin nghỉ/daily digest chỉ gửi người có leaves.update của đúng company.
+Notification chỉ đọc userId từ authenticated user, không từ browser query.
+
+8. API CỤ THỂ (KHÔNG DÙNG RESOURCE ROUTE)
+GET  /api/companies/list                  companies.view
+GET  /api/companies/detail/:id            companies.view + own company
+POST /api/companies/create               admin + companies.create
+PUT  /api/companies/update/:id            companies.update + own company
+GET  /api/access/list                     admin + access.manage
+POST /api/roles/create                    admin + access.manage
+PUT  /api/roles/update/:id                 admin + access.manage + own company
+PUT  /api/accounts/assign/:id              admin + access.manage + own company
+
+Body tạo role: {"name":"Trưởng nhóm","code":"team_lead","permissions":["dashboard.view","employees.view"]}
+Body assign: {"roleId":ROLE_ID_THAT,"allow":["departments.create"],"deny":["employees.view"]}
+ROLE_ID_THAT là placeholder cần thay bằng số id thật; không copy JSON placeholder làm input.
+Tài khoản admin/role admin được bảo vệ, không tự gỡ quyền quản trị qua form.
+HR/custom role dù có checkbox access.manage vẫn không quản lý bảo mật nếu không
+thuộc nhóm admin; companies.create cũng có chốt admin. Đây là điều kiện bổ sung
+ngoài permission. Không tự nâng quyền và không nhận role của company khác.
+
+9. LỆNH TERMINAL TỰ CHẠY
+Chạy toàn bộ và áp dụng migration/seed, giữ dữ liệu:
+  cd ~/Desktop/xinviec/weeksevenfileone
+  sh scripts/start-hrm.sh
+
+Xem quyền tài khoản đang lưu và quyền hiệu lực từ MySQL:
+  docker compose exec app node scripts/hrm-cli.js access:list
+
+Xem migration / route:
+  docker compose exec app node scripts/hrm-cli.js migrations
+  docker compose exec app node scripts/hrm-cli.js route:list
+
+Chạy regression với MySQL/Redis và notification Docker đang chạy:
+  sh scripts/test-hrm.sh
+Test tự tạo dữ liệu company/account riêng và dọn dữ liệu của test; không reset DB.
+
+Chạy riêng migration/seed ở host khi hạ tầng Docker đang chạy:
+  npm run migrate
+  npm run seed
+DDL MySQL không rollback toàn bộ như transaction nghiệp vụ. Migration 002 không
+cho downgrade tự động vì có dữ liệu company; dùng backup/review trước khi hạ schema.
+Không xóa volume hoặc chạy sync({force:true}) để cập nhật chức năng này.
+
+SQL CHỈ ĐỌC ĐỂ KIỂM TRA (dán vào SQL client đang kết nối week7_hrm):
+  SELECT id,name,code FROM hrm_companies;
+  SELECT u.id,u.email,u.company_id,r.name AS role_name
+  FROM hrm_users u JOIN hrm_roles r ON r.id=u.role_id;
+  SELECT r.company_id,r.code,p.key
+  FROM hrm_roles r JOIN hrm_role_permissions rp ON rp.role_id=r.id
+  JOIN hrm_permissions p ON p.id=rp.permission_id
+  ORDER BY r.company_id,r.code,p.key;
+  SELECT u.email,p.key,up.allowed
+  FROM hrm_user_permissions up JOIN hrm_users u ON u.id=up.user_id
+  JOIN hrm_permissions p ON p.id=up.permission_id;
+
+10. PHỎNG VẤN JUNIOR: TỰ GIẢI THÍCH
+- Role khác permission và job position thế nào?
+- Vì sao người có employees.update vẫn không sửa được company khác?
+- Ẩn menu đã bảo mật chưa? Backend thực thi ở đâu?
+- Đổi role khi token cũ còn hạn thì chuyện gì xảy ra?
+- allow/deny xung đột thì giải quyết thế nào trong project?
+- FK ghép bảo vệ điều gì ngoài Zod validation?
+- Một role chứa nhiều permission có phải nhiều microservice không?
+Bài tập: cấp cho một account chỉ xem nhân viên, không sửa/xóa; kiểm tra cả HTML/API.
+Không tự ghi đã hiểu/đạt điểm khi chưa tự làm và giải thích.
+
+TÀI LIỆU CHÍNH THỨC (Cmd+click URL trong editor):
+https://spatie.be/docs/laravel-permission/v6/basic-usage/role-permissions
+https://laravel.com/framework/docs/13.x/authorization
+https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/
+https://sequelize.org/docs/v6/other-topics/transactions/
+https://socket.io/docs/v4/rooms/

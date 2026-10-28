@@ -5,5 +5,5 @@ export const index = async (req, res) =>
   res.render("departments", {
     title: "Phòng ban",
     active: "departments",
-    departments: await queryBus.ask(new GetDepartmentListQuery(true)),
+    departments: await queryBus.ask(new GetDepartmentListQuery(req.user, true)),
   });

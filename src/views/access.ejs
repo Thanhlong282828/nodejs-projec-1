@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+<section class="page-heading"><div><div class="eyebrow">ROLES & PERMISSIONS</div><h1>Chức vụ & phân quyền</h1><p>Công ty: <%= user.company.name %>. Cấu hình được lưu trực tiếp trong MySQL.</p></div></section>
+<section class="panel access-panel"><h2>Tạo chức vụ</h2><p>Chức danh trên hồ sơ mô tả công việc; chức vụ truy cập ở đây quyết định quyền trong hệ thống.</p>
+<form data-access-form="role" data-api="/api/roles/create"><div class="form-grid"><label>Tên chức vụ<input name="name" required maxlength="120" placeholder="Trưởng nhóm"></label><label>Mã chức vụ<input name="code" required pattern="[a-z][a-z0-9_-]{1,59}" placeholder="team_lead"></label></div>
+<fieldset class="permission-grid"><legend>Quyền của chức vụ</legend><% for(const permission of result.permissions){ %><label><input type="checkbox" name="permissions" value="<%= permission.key %>"><span><%= permission.name %><small><%= permission.key %></small></span></label><% } %></fieldset>
+<div class="form-error" role="alert"></div><button class="button primary">Tạo chức vụ</button></form></section>
+<% for(const role of result.roles){const keys=role.permissions.map(p=>p.key); %>
+<section class="panel access-panel"><details><summary><strong><%= role.name %></strong> · <%= role.code %> · <%= keys.length %> quyền</summary>
+<% if(role.systemKey==='admin'){ %><p>Chức vụ quản trị được bảo vệ để tránh mất quyền quản lý công ty.</p><p><%= keys.join(', ') %></p><% }else{ %>
+<form data-access-form="role" data-api="/api/roles/update/<%= role.id %>" data-method="PUT"><div class="form-grid"><label>Tên chức vụ<input name="name" value="<%= role.name %>" required></label><label>Mã chức vụ<input name="code" value="<%= role.code %>" <%= role.systemKey?'readonly':'' %> required></label></div>
+<fieldset class="permission-grid"><legend>Quyền của chức vụ</legend><% for(const permission of result.permissions){ %><label><input type="checkbox" name="permissions" value="<%= permission.key %>" <%= keys.includes(permission.key)?'checked':'' %>><span><%= permission.name %><small><%= permission.key %></small></span></label><% } %></fieldset>
+<div class="form-error" role="alert"></div><button class="button primary">Lưu quyền chức vụ</button><p class="muted">Tài khoản thuộc chức vụ này cần đăng nhập lại sau khi lưu.</p></form><% } %></details></section><% } %>
+<section class="panel access-panel"><h2>Gán chức vụ và quyền cho tài khoản</h2><p>Mặc định kế thừa chức vụ. “Cấp thêm” bổ sung quyền; “Thu hồi” chặn quyền kể cả khi chức vụ đã cấp. Khi lưu sẽ thu hồi phiên đăng nhập cũ của tài khoản.</p>
+<% for(const account of result.accounts){const overrides=new Map(account.overrides.map(o=>[o.permissionId,o.allowed])); %>
+<details class="account-access"><summary><strong><%= account.name %></strong> · <%= account.email %> · <%= account.roleName %></summary>
+<% if(account.role==='admin'||account.id===user.id){ %><p>Tài khoản quản trị được bảo vệ.</p><% }else{ %>
+<form data-access-form="account" data-api="/api/accounts/assign/<%= account.id %>" data-method="PUT">
+<label>Chức vụ<select name="roleId" required><% for(const role of result.roles.filter(r=>r.systemKey!=='admin')){ %><option value="<%= role.id %>" <%= role.id===account.roleId?'selected':'' %>><%= role.name %></option><% } %></select></label>
+<div class="permission-grid"><% for(const permission of result.permissions){const override=overrides.get(permission.id); %><label><span><%= permission.name %><small><%= permission.key %></small></span><select name="override:<%= permission.key %>" aria-label="<%= permission.name %>"><option value="inherit" <%= override===undefined?'selected':'' %>>Theo chức vụ</option><option value="allow" <%= override===true?'selected':'' %>>Cấp thêm</option><option value="deny" <%= override===false?'selected':'' %>>Thu hồi</option></select></label><% } %></div>
+<p class="muted">Quyền hiệu lực hiện tại: <%= account.permissions.join(', ')||'Không có quyền' %></p><div class="form-error" role="alert"></div><button class="button primary">Gán quyền tài khoản</button></form><% } %></details><% } %></section>
+<%- include('partials/footer') %>

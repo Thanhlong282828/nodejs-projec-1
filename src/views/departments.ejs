@@ -5,7 +5,7 @@
 <h1>Phòng ban</h1>
 <p>Kết nối các nhóm chuyên môn trong tổ chức.</p>
 </div>
-<button class="button primary" data-open="department-dialog">＋ Thêm phòng ban</button>
+<% if(can("departments.create")){ %><button class="button primary" data-open="department-dialog">＋ Thêm phòng ban</button><% } %>
 </section>
 <div class="department-grid">
 <% for(const d of departments){ %>
@@ -21,8 +21,8 @@
 <span>
 <%= d.employees.length %> thành viên</span>
 <div>
-<button class="text-button" data-edit-department="<%= JSON.stringify({id:d.id,name:d.name,description:d.description}) %>">Sửa</button>
-<button class="text-button danger" data-delete="/api/departments/delete/<%= d.id %>">Xóa</button>
+<% if(can("departments.update")){ %><button class="text-button" data-edit-department="<%= JSON.stringify({id:d.id,name:d.name,description:d.description}) %>">Sửa</button><% } %>
+<% if(can("departments.delete")){ %><button class="text-button danger" data-delete="/api/departments/delete/<%= d.id %>">Xóa</button><% } %>
 </div>
 </div>
 </article>

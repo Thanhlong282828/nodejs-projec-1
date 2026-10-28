@@ -1,0 +1,60 @@
+KIỂM CHỨNG COMPANY / ROLE / PERMISSION MYSQL — 28/10/2026
+
+ĐÃ TRIỂN KHAI THẬT
+- Migration 002-company-permissions.js đã chạy trên MySQL week7_hrm đang dùng.
+- hrm_migrations ghi cả 001-hrm-core.js và 002-company-permissions.js; pending [].
+- Dữ liệu sau test: 1 company PeopleFlow, 3 roles hệ thống, 24 permission,
+  51 role-permission mappings và 6 tài khoản được gán company_id/role_id.
+  Override ban đầu 0 hàng: tài khoản đang kế thừa quyền role, không phải chưa gán quyền.
+- Admin 24 quyền; HR 19; Employee 8. Role/override do UI/API sửa được lưu MySQL.
+- Bảng mới: hrm_companies, hrm_roles, hrm_permissions, hrm_role_permissions,
+  hrm_user_permissions. Thêm company_id cho bảng nghiệp vụ và role_id cho users.
+- Composite FK chặn quan hệ khác company; department name/employee code unique
+  theo company. Email account vẫn global unique.
+- Mỗi request nạp quyền DB, không hard-code quyền hiệu lực theo role trong Policy.
+- Company + access modules giữ Module/MVC/CQRS, route action-based, Zod, transaction/audit.
+- UI EJS có form company, role, account assignment và allow/deny; menu/nút theo quyền.
+
+KẾT QUẢ CHẠY
+1. sh scripts/test-hrm.sh: 41 pass / 0 fail / 0 skip.
+   Giữ toàn bộ regression trước, thêm 14 scenario company/permission:
+   migration/account mappings; company bootstrap; scope list/search/dashboard/audit;
+   queue metrics company; cross-company read/write/FK/role injection;
+   leave/attendance ownership; HR không sửa account vượt quyền;
+   custom role + JWT revoke; account allow/deny; SQL permission thay đổi ngay;
+   role edit/protected admin; EJS forms; realtime scope + revoke; scoped scheduler digest.
+2. Test SQL trực tiếp UPDATE hrm_user_permissions.allowed rồi gọi cùng JWT:
+   employees.view chuyển 403 -> 200 -> 403, không restart server.
+3. Test FK trực tiếp UPDATE employee sang department khác company bị MySQL từ chối.
+4. E2E: socket unauthenticated bị từ chối; transactional create + realtime;
+   outbox -> BullMQ/Redis -> notification service -> notification DB -> Mailpit;
+   internal-key guard; consumer deduplication; failed-job retries đều pass.
+5. Docker app/scheduler rebuild và up thành công; Nginx :8087 chạy bản mới.
+6. HTTP smoke qua localhost:8087: 10 trang HTML (gồm companies/access), form thật,
+   3 API mới/hệ thống và account employee bị từ chối company/access/employee-list pass.
+7. route:list có 43 route, không resource URL chung.
+8. git diff --check sạch; các liên kết tài liệu nội bộ được kiểm tra.
+
+LỆNH CHẠY LẠI
+  cd ~/Desktop/xinviec/weeksevenfileone
+  sh scripts/start-hrm.sh
+  sh scripts/test-hrm.sh
+  docker compose exec app node scripts/hrm-cli.js access:list
+  docker compose exec app node scripts/hrm-cli.js migrations
+
+E2E trong Docker khi stack đang chạy (mount source và devDependencies host):
+  docker compose --profile full run --rm --no-deps -e MAILPIT_URL=http://mailpit:8025 -v "$PWD:/app" app npm run test:e2e
+
+GIỚI HẠN BẰNG CHỨNG
+- Kiểm tra HTTP/server HTML và API/DB, không có screenshot hoặc kiểm tra click browser mới.
+- Company trong test được tạo thật và dọn sau test; không để công ty giả trên dashboard.
+- Email chỉ ở Mailpit local, không gửi ra ngoài.
+- Một company và một role cho mỗi account; chưa có branch/nhiều membership.
+- Không phải mọi tính năng Spatie hoặc toàn bộ ERP DJI; chưa load test/production audit.
+- Test pass là bằng chứng phần mềm, không phải điểm thi/hiểu biết của người học.
+- Không dùng reset/sync force, không đổi config hoặc dữ liệu project Laravel DJI.
+
+HƯỚNG DẪN ĐỐI CHIẾU NGAY PHẦN ĐÃ BỔ SUNG
+COMPANY-PERMISSION-LARAVEL-NODEJS.txt
+../HUONG-DAN-LARAVEL-SANG-NODEJS.txt: mục 14 và 34.
+HUONG-DAN-KIEN-TRUC-LARAVEL-NODEJS.txt: phần company và authentication/authorization.

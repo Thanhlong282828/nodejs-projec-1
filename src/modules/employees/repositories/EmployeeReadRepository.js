@@ -1,4 +1,5 @@
 // Read Repository chỉ truy vấn dữ liệu, không làm thay đổi trạng thái.
+import { companyWhere } from "../../../core/tenant.js";
 import { Op } from "sequelize";
 import { Employee, User, Department } from "../../../models/index.js";
 import { paginationSchema, parseId } from "../../../lib/validation.js";
@@ -11,9 +12,9 @@ const include = [
   },
   { model: Department, as: "department" },
 ];
-export async function list(query) {
+export async function list(actor, query) {
   const q = paginationSchema.parse(query);
-  const where = {};
+  const where = companyWhere(actor);
   if (q.departmentId) where.departmentId = q.departmentId;
   if (q.search)
     where[Op.or] = [
@@ -34,8 +35,11 @@ export async function list(query) {
     pagination: { page: q.page, perPage: 10, total: result.count },
   };
 }
-export async function get(id) {
-  const employee = await Employee.findByPk(parseId(id), { include });
+export async function get(actor, id) {
+  const employee = await Employee.findOne({
+    where: { id: parseId(id), ...companyWhere(actor) },
+    include,
+  });
   if (!employee) throw new HttpError(404, "Không tìm thấy nhân viên.");
   return employee;
 }

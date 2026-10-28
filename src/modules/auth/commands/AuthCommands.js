@@ -1,4 +1,5 @@
 // Service kiểm tra nghiệp vụ, gọi model Sequelize và giữ các thay đổi liên quan trong transaction.
+import { loadAccess } from "../../access/access-context.js";
 import bcrypt from "bcryptjs";
 import { User, Employee, safeUser } from "../../../models/index.js";
 import { loginSchema } from "../requests/LoginRequest.js";
@@ -12,6 +13,8 @@ async function login(input) {
   });
   if (!user || !user.active || !(await bcrypt.compare(password, user.password)))
     throw new HttpError(401, "Email hoặc mật khẩu không đúng.");
+  if (!(await loadAccess(user)))
+    throw new HttpError(403, "Chưa có công ty/chức vụ hợp lệ.");
   return { ...issueToken(user), user: safeUser(user) };
 }
 

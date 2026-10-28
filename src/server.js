@@ -13,7 +13,7 @@ export function createHttpServer() {
     allowRequest: (req, done) =>
       done(null, !req.headers.origin || req.headers.origin === config.origin),
   });
-  // Socket cũng phải xác thực: mỗi user vào room riêng; chỉ Admin/HR vào managers.
+  // Socket xác thực bằng DB; event được lọc company và permission trước khi gửi.
   io.use(async (socket, next) => {
     try {
       const cookie = (socket.request.headers.cookie || "")
@@ -26,6 +26,7 @@ export function createHttpServer() {
       if (!token) throw new Error("Missing token");
       const resolved = await resolveToken(token);
       socket.data.user = resolved.user;
+      socket.data.token = token;
       socket.data.expiresAt = resolved.claims.exp;
       next();
     } catch {
@@ -35,7 +36,7 @@ export function createHttpServer() {
   io.on("connection", (socket) => {
     const user = socket.data.user;
     socket.join(`user-${user.id}`);
-    if (["admin", "hr"].includes(user.role)) socket.join("managers");
+    socket.join(`company-${user.companyId}`);
     const timer = setTimeout(
       () => socket.disconnect(true),
       Math.max(0, socket.data.expiresAt * 1000 - Date.now()),

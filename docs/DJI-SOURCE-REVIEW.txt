@@ -1,4 +1,4 @@
-THAM CHIẾU SOURCE LARAVEL DJI — 26/10/2026
+THAM CHIẾU SOURCE LARAVEL DJI — 26/10/2026; cập nhật Node 28/10/2026
 
 Phạm vi: đọc source admin/main tại ~/Desktop/laraveldji, nâng cấu trúc Node tại
 ~/Desktop/xinviec/weeksevenfileone theo lựa chọn giữ nguyên chức năng HRM.
@@ -28,7 +28,12 @@ Node áp dụng:
 
 Ranh giới so sánh:
 - Đọc source là căn cứ thiết kế, chưa chạy test hoặc audit toàn bộ Laravel DJI.
-- Node giữ một workspace; không tuyên bố có multi-company/branch, permission DB,
-  payroll, hợp đồng, tài liệu doanh nghiệp hoặc commerce như DJI.
-- Lần thay đổi này không đổi schema, không lấy dữ liệu/config từ DJI.
+- Node đã có multi-company và role/permission lưu MySQL qua migration 002.
+  companyWhere(actor) giới hạn repository/command; Policy dùng permission DB,
+  UserPermission hỗ trợ allow/deny. Mở /companies/list và /access/list để thao tác.
+  Đối chiếu: DJI can(permission)+tenant service → Node can(user,key)+companyWhere(actor).
+  Hướng dẫn ngay cho phần từng thiếu: COMPANY-PERMISSION-LARAVEL-NODEJS.txt.
+- Chưa có branch/payroll/hợp đồng/commerce như DJI. Không lấy dữ liệu/config DJI.
+- Refactor 26/10 giữ schema; nâng cấp 28/10 thêm schema company/role/permission,
+  backfill account cũ vào PeopleFlow, không reset dữ liệu.
 - Hướng dẫn người học nằm ở ../HUONG-DAN-LARAVEL-SANG-NODEJS.txt.

@@ -7,26 +7,26 @@ API base `http://localhost:8087/api` (Docker), `http://localhost:3057/api` (host
 | POST | /auth/login | Public, rate limit, same-origin |
 | POST | /auth/logout | Đăng nhập; thu hồi token |
 | GET | /auth/profile | Thông tin user hiện tại |
-| GET | /dashboard/summary | Dashboard theo role |
-| GET | /employees/list | Admin/HR; search, filter, page |
-| GET | /employees/detail/:id | Admin/HR |
-| POST | /employees/create | Admin/HR |
-| PUT | /employees/update/:id | Admin/HR |
-| DELETE | /employees/delete/:id | Admin/HR; vô hiệu hóa, giữ lịch sử |
-| GET | /departments/list | Đăng nhập |
-| POST | /departments/create | Admin/HR |
-| PUT | /departments/update/:id | Admin/HR |
-| DELETE | /departments/delete/:id | Admin/HR; phòng ban không có nhân viên |
-| GET | /leaves/list | Employee chỉ own; Admin/HR all |
+| GET | /dashboard/summary | dashboard.view; thống kê theo company/quyền |
+| GET | /employees/list | employees.view; trong company hiện tại |
+| GET | /employees/detail/:id | employees.view; trong company hiện tại |
+| POST | /employees/create | employees.create; trong company hiện tại |
+| PUT | /employees/update/:id | employees.update; trong company hiện tại |
+| DELETE | /employees/delete/:id | employees.delete; trong company hiện tại |
+| GET | /departments/list | departments.view; trong company hiện tại |
+| POST | /departments/create | departments.create; trong company hiện tại |
+| PUT | /departments/update/:id | departments.update; trong company hiện tại |
+| DELETE | /departments/delete/:id | departments.delete; trong company hiện tại |
+| GET | /leaves/list | view: own; viewAll: toàn company |
 | POST | /leaves/create | Tạo đơn cho chính mình |
-| PATCH | /leaves/update/:id | Admin/HR duyệt/từ chối; không tự duyệt |
+| PATCH | /leaves/update/:id | leaves.update; cùng company, không tự duyệt |
 | DELETE | /leaves/delete/:id | Owner, pending only |
-| GET | /attendance/list | Employee chỉ own; Admin/HR all |
+| GET | /attendance/list | view: own; viewAll: toàn company |
 | POST | /attendance/check-in | Check-in user hiện tại |
 | POST | /attendance/check-out | Check-out user hiện tại |
 | GET | /notifications/list | Thông báo của user hiện tại |
-| GET | /audit/list | Admin/HR; 20/page |
-| GET | /system/status | Admin |
+| GET | /audit/list | audit.view; cùng company, 20/page |
+| GET | /system/status | system.view |
 
 List employees: search, departmentId, page. Leaves: status (pending/approved/rejected), page. Attendance: page. 10 bản ghi/page, có metadata. Chấm công theo ngày VN, unique(employee_id,work_date), không chỉnh giờ từ client.
 
@@ -62,3 +62,21 @@ Web: `/employees/list`, `/departments/list`, `/leaves/list`, `/attendance/list`,
 Notification service: `GET /internal/messages/list?userId=...` có `x-internal-key`. `/health`, `/socket.io/` và API bên thứ ba Mailpit giữ nguyên vì là endpoint hạ tầng, không phải CRUD resource của HRM.
 
 Các endpoint cũ như `/api/employees`, `/api/employees/:id`, `/api/leaves` đã bỏ, không có alias hay resource fallback; client cũ phải đổi sang bảng trên. `legacy/inventory` là bản lịch sử độc lập, giữ nguyên route cũ.
+
+## Company và quyền MySQL
+
+| Method | URL (sau /api) | Quyền |
+|---|---|---|
+| GET | /companies/list | companies.view; company hiện tại |
+| GET | /companies/detail/:id | companies.view; own company |
+| POST | /companies/create | admin + companies.create; kèm adminName/adminEmail/adminPassword |
+| PUT | /companies/update/:id | companies.update; own company |
+| GET | /access/list | admin + access.manage |
+| POST | /roles/create | admin + access.manage |
+| PUT | /roles/update/:id | admin + access.manage; own company |
+| PUT | /accounts/assign/:id | admin + access.manage; own company |
+
+Body role: `{"name":"Trưởng nhóm","code":"team_lead","permissions":["dashboard.view","employees.view"]}`.
+Body assign: `{"roleId":4,"allow":["departments.create"],"deny":["employees.view"]}`; thay 4 bằng ID role thật của company.
+Role/admin và tự thay quyền được bảo vệ. Assignment thay toàn bộ override của account, tăng tokenVersion.
+Trang web: `/companies/list`, `/access/list`. [Hướng dẫn đầy đủ](COMPANY-PERMISSION-LARAVEL-NODEJS.txt).

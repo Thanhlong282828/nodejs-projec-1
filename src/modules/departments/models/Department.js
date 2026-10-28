@@ -5,8 +5,9 @@ import { modelOptions as options } from "../../../models/model-options.js";
 export const Department = db.define(
   "Department",
   {
+    companyId: { type: D.INTEGER.UNSIGNED, allowNull: false },
     id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    name: { type: D.STRING(100), unique: true },
+    name: { type: D.STRING(100) },
     description: D.STRING(500),
   },
   options("hrm_departments"),

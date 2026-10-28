@@ -1337,3 +1337,46 @@ dialog::backdrop {
     margin-left: 0;
   }
 }
+
+.access-panel {
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.access-panel form {
+  margin-top: 18px;
+}
+.access-panel summary {
+  cursor: pointer;
+  line-height: 1.8;
+}
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+  border: 1px solid #dbe7f5;
+  border-radius: 12px;
+  padding: 18px;
+}
+.permission-grid label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.permission-grid input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #2563eb;
+}
+.permission-grid small {
+  display: block;
+  color: #64748b;
+}
+.permission-grid select {
+  min-width: 120px;
+}
+.account-access {
+  padding: 18px 0;
+  border-bottom: 1px solid #e2e8f0;
+}

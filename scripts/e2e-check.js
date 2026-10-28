@@ -51,7 +51,9 @@ try {
   });
   await once(socket, "connect");
   const changes = once(socket, "hrm:changed");
-  const department = await Department.findOne();
+  const department = await Department.findOne({
+    where: { companyId: login.body.data.user.companyId },
+  });
   const body = {
     name: "E2E Demo Employee",
     email: `${suffix}@example.test`,
@@ -92,9 +94,9 @@ try {
     return rows.find((row) => row.eventId === eventId && row.status === "sent");
   }, "notification sent");
   assert.equal(message.recipient, body.email);
-  const inbox = await fetch("http://127.0.0.1:8037/api/v1/messages").then((r) =>
-    r.json(),
-  );
+  const inbox = await fetch(
+    `${process.env.MAILPIT_URL || "http://127.0.0.1:8037"}/api/v1/messages`,
+  ).then((r) => r.json());
   assert.ok(
     inbox.messages.some((m) => m.To.some((to) => to.Address === body.email)),
   );
@@ -122,9 +124,9 @@ try {
     async () => (await duplicate.getState()) === "completed",
     "duplicate processed",
   );
-  const inboxAfter = await fetch("http://127.0.0.1:8037/api/v1/messages").then(
-    (r) => r.json(),
-  );
+  const inboxAfter = await fetch(
+    `${process.env.MAILPIT_URL || "http://127.0.0.1:8037"}/api/v1/messages`,
+  ).then((r) => r.json());
   assert.equal(
     inboxAfter.messages.filter((m) =>
       m.To.some((to) => to.Address === body.email),

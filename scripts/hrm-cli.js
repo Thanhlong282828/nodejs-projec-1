@@ -1,7 +1,10 @@
+import { loadAccess } from "../src/modules/access/access-context.js";
+import { safeUser } from "../src/models/index.js";
+import { createCompanyRoles } from "../src/modules/access/bootstrap.js";
 import bcrypt from "bcryptjs";
 import { db } from "../src/lib/db.js";
 import { migrator } from "../src/lib/migrations.js";
-import { User, Employee, Department } from "../src/models/index.js";
+import { User, Employee, Department, Company } from "../src/models/index.js";
 import { registerObservers } from "../src/observers/audit-observer.js";
 import { dispatch, closeQueue, getQueue } from "../src/queue/index.js";
 import { runOnce } from "../src/scheduler-jobs.js";
@@ -9,6 +12,13 @@ import { redis } from "../src/lib/redis.js";
 registerObservers();
 async function seed() {
   await db.transaction(async (transaction) => {
+    const company = await Company.findOne({
+      where: { code: "PEOPLEFLOW" },
+      transaction,
+    });
+    if (!company) throw new Error("Run migrate before seed");
+    const companyId = company.id,
+      roles = await createCompanyRoles(companyId, transaction);
     const specs = [
       ["Kỹ thuật", "Xây dựng và vận hành sản phẩm"],
       ["Nhân sự", "Phát triển con người và văn hóa"],
@@ -17,7 +27,7 @@ async function seed() {
     const departments = [];
     for (const [name, description] of specs) {
       const [row] = await Department.findOrCreate({
-        where: { name },
+        where: { name, companyId },
         defaults: { description },
         transaction,
         skipAudit: true,
@@ -92,6 +102,8 @@ async function seed() {
       const [user, created] = await User.findOrCreate({
         where: { email },
         defaults: {
+          companyId,
+          roleId: roles[role].id,
           name,
           role,
           password: await bcrypt.hash("HrmDemo123!", 12),
@@ -102,6 +114,7 @@ async function seed() {
       if (created)
         await Employee.create(
           {
+            companyId,
             code,
             userId: user.id,
             departmentId: departments[department].id,
@@ -125,6 +138,31 @@ try {
     const { app } = await import("../src/app.js");
     const { listRoutes } = await import("../src/core/route-list.js");
     console.table(listRoutes(app));
+  } else if (command === "access:list") {
+    const rows = [];
+    for (const user of await User.findAll({
+      order: [
+        ["companyId", "ASC"],
+        ["id", "ASC"],
+      ],
+    })) {
+      await loadAccess(user);
+      const item = safeUser(user);
+      rows.push({
+        id: item.id,
+        email: item.email,
+        companyId: item.companyId,
+        company: item.company?.name,
+        roleId: item.roleId,
+        role: item.roleName,
+        permissions: item.permissions.join(", "),
+      });
+    }
+    console.log(
+      "Application permissions stored in MySQL database:",
+      db.config.database,
+    );
+    console.table(rows);
   } else if (command === "migrate") await migrator.up();
   else if (command === "migrations")
     console.log({
@@ -165,7 +203,7 @@ try {
     );
   else
     console.log(
-      "Commands: route:list | migrate | migrations | seed | users | dispatch | queue:failed | queue:retry JOB_ID | schedule:run | undo --confirm-data-loss",
+      "Commands: route:list | access:list | migrate | migrations | seed | users | dispatch | queue:failed | queue:retry JOB_ID | schedule:run | undo --confirm-data-loss",
     );
 } catch (error) {
   console.error(error.message);

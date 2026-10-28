@@ -200,3 +200,37 @@ if (document.getElementById("system-stats"))
       );
     })
     .catch((e) => toast(e.message));
+
+// Form phân quyền dùng danh sách checkbox + override, gửi JSON thật tới API.
+for (const form of document.querySelectorAll("form[data-access-form]")) {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector("button");
+    const error = form.querySelector(".form-error");
+    button.disabled = true;
+    error.textContent = "";
+    try {
+      const input = new FormData(form);
+      let body;
+      if (form.dataset.accessForm === "role")
+        body = {
+          name: input.get("name"),
+          code: input.get("code"),
+          permissions: input.getAll("permissions"),
+        };
+      else {
+        body = { roleId: Number(input.get("roleId")), allow: [], deny: [] };
+        for (const [key, value] of input) {
+          if (key.startsWith("override:") && ["allow", "deny"].includes(value))
+            body[value].push(key.slice(9));
+        }
+      }
+      await api(form.dataset.api, form.dataset.method || "POST", body);
+      location.reload();
+    } catch (e) {
+      error.textContent = e.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}

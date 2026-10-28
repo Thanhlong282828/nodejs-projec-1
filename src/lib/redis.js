@@ -28,6 +28,17 @@ export async function cached(key, seconds, load) {
 export async function invalidate() {
   try {
     await connected();
-    await redis.del("hrm:dashboard");
+    let cursor = "0";
+    do {
+      const [next, keys] = await redis.scan(
+        cursor,
+        "MATCH",
+        "hrm:dashboard*",
+        "COUNT",
+        100,
+      );
+      cursor = next;
+      if (keys.length) await redis.del(...keys);
+    } while (cursor !== "0");
   } catch {}
 }

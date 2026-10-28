@@ -5,6 +5,7 @@ import { modelOptions as options } from "../../../models/model-options.js";
 export const Attendance = db.define(
   "Attendance",
   {
+    companyId: { type: D.INTEGER.UNSIGNED, allowNull: false },
     id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
     employeeId: D.INTEGER.UNSIGNED,
     workDate: D.DATEONLY,

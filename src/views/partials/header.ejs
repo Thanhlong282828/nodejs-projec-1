@@ -22,13 +22,24 @@
 </a>
 <div class="workspace">
 <span class="workspace-avatar">P</span>
-<div>PeopleFlow Workspace<small>Quản trị nhân sự</small>
+<div><%= user.company?.name||'PeopleFlow' %><small>Quản trị nhân sự</small>
 </div>
 <span>⌄</span>
 </div>
 <div class="nav-label">KHÔNG GIAN LÀM VIỆC</div>
 <nav aria-label="Điều hướng chính">
-<% const items=[['dashboard','/','◫','Tổng quan'],...(user.role!=='employee'?[['employees','/employees/list','♙','Nhân viên'],['departments','/departments/list','▦','Phòng ban']]:[]),['attendance','/attendance/list','◷','Chấm công'],['leaves','/leaves/list','▣','Nghỉ phép'],['notifications','/notifications/list','♧','Thông báo'],...(user.role!=='employee'?[['audit','/audit/list','≡','Nhật ký thay đổi']]:[]),...(user.role==='admin'?[['system','/system/status','⚙','Hệ thống']]:[])]; %>
+<% const items=[
+['dashboard','/','◫','Tổng quan','dashboard.view'],
+['employees','/employees/list','♙','Nhân viên','employees.view'],
+['departments','/departments/list','▦','Phòng ban','departments.view'],
+['companies','/companies/list','▦','Công ty','companies.view'],
+['access','/access/list','⚿','Chức vụ & phân quyền','access.manage'],
+['attendance','/attendance/list','◷','Chấm công','attendance.view'],
+['leaves','/leaves/list','▣','Nghỉ phép','leaves.view'],
+['notifications','/notifications/list','♧','Thông báo',null],
+['audit','/audit/list','≡','Nhật ký thay đổi','audit.view'],
+['system','/system/status','⚙','Hệ thống','system.view']
+].filter(item=>!item[4]||can(item[4])).filter(item=>item[0]!=='access'||user.role==='admin'); %>
 <% for(const [key,url,icon,label] of items){ %>
 <a href="<%= url %>" class="nav-item <%= active===key?'selected':'' %>" <%- active===key?'aria-current="page"':'' %>>
 <span class="nav-icon">
@@ -51,7 +62,7 @@
 <%= user.name %>
 </strong>
 <small>
-<%= {admin:'Quản trị viên',hr:'Nhân sự',employee:'Nhân viên'}[user.role] %>
+<%= user.roleName||user.role %>
 </small>
 </div>
 <button class="icon-button" id="logout" title="Đăng xuất" aria-label="Đăng xuất">↪</button>

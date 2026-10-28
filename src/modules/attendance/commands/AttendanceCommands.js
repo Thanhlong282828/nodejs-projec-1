@@ -1,3 +1,4 @@
+import { companyWhere } from "../../../core/tenant.js";
 // Command Handler: nghiệp vụ ghi + transaction + observer/outbox, tương tự DJI.
 import { db } from "../../../lib/db.js";
 import { Attendance } from "../../../models/index.js";
@@ -9,6 +10,7 @@ async function checkIn(user) {
   const row = await db.transaction((transaction) =>
     Attendance.create(
       {
+        ...companyWhere(user),
         employeeId: user.employee.id,
         workDate: workDate(),
         checkIn: new Date(),
@@ -16,7 +18,11 @@ async function checkIn(user) {
       { transaction, actorId: user.id },
     ),
   );
-  await publish({ topic: "attendance.checked-in", employeeUserId: user.id });
+  await publish({
+    companyId: user.companyId,
+    topic: "attendance.checked-in",
+    employeeUserId: user.id,
+  });
   return row;
 }
 async function checkOut(user) {
@@ -35,7 +41,11 @@ async function checkOut(user) {
       { transaction, actorId: user.id },
     );
   });
-  await publish({ topic: "attendance.checked-out", employeeUserId: user.id });
+  await publish({
+    companyId: user.companyId,
+    topic: "attendance.checked-out",
+    employeeUserId: user.id,
+  });
   return row;
 }
 

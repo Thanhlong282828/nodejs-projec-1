@@ -1,22 +1,26 @@
+import { companyWhere } from "../../../core/tenant.js";
 import { Audit } from "../../../models/index.js";
 import { paginationSchema } from "../../../lib/validation.js";
 export class GetAuditListQuery {
-  constructor(filters = {}) {
+  constructor(actor, filters = {}) {
+    this.actor = actor;
     this.filters = filters;
     Object.freeze(this);
   }
 }
 export class GetRecentAuditQuery {
-  constructor() {
+  constructor(actor) {
+    this.actor = actor;
     Object.freeze(this);
   }
 }
 export const queryHandlers = [
   [
     GetAuditListQuery,
-    async ({ filters }) => {
+    async ({ actor, filters }) => {
       const q = paginationSchema.parse(filters);
       const result = await Audit.findAndCountAll({
+        where: companyWhere(actor),
         order: [["id", "DESC"]],
         limit: 20,
         offset: (q.page - 1) * 20,
@@ -26,6 +30,11 @@ export const queryHandlers = [
   ],
   [
     GetRecentAuditQuery,
-    () => Audit.findAll({ order: [["id", "DESC"]], limit: 50 }),
+    ({ actor }) =>
+      Audit.findAll({
+        where: companyWhere(actor),
+        order: [["id", "DESC"]],
+        limit: 50,
+      }),
   ],
 ];

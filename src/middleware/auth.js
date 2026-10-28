@@ -1,3 +1,5 @@
+import { loadAccess } from "../modules/access/access-context.js";
+import { can } from "../modules/access/permissions.js";
 import jwt from "jsonwebtoken";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { User, Employee, safeUser } from "../models/index.js";
@@ -36,6 +38,8 @@ export async function resolveToken(token) {
     );
   if (user.role === "employee" && !user.employee)
     throw new HttpError(403, "Tài khoản chưa có hồ sơ nhân viên.");
+  if (!(await loadAccess(user)))
+    throw new HttpError(403, "Tài khoản chưa được gán công ty/chức vụ hợp lệ.");
   return { user, claims };
 }
 export async function authenticate(req, res, next) {
@@ -50,6 +54,7 @@ export async function authenticate(req, res, next) {
   req.claims = resolved.claims;
   req.isBearer = Boolean(bearer);
   res.locals.user = safeUser(req.user);
+  res.locals.can = (key) => can(req.user, key);
   res.locals.csrf = resolved.claims.csrf;
   next();
 }

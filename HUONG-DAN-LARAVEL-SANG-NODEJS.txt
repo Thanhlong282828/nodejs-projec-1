@@ -1,6 +1,6 @@
 ĐỐI CHIẾU PHP/LARAVEL ↔ JAVASCRIPT/NODE.JS — LUYỆN JUNIOR BACKEND
 Project thực hành: nodejs-projec-1 / PeopleFlow HRM
-Cập nhật: 27/10/2026
+Cập nhật: 28/10/2026
 
 MỤC TIÊU
 Bạn đã học Laravel: chuyển từng khái niệm quen thuộc sang code Node, hiểu luồng
@@ -32,10 +32,14 @@ PHẠM VI VÍ DỤ
 Các đoạn code được rút gọn để đối chiếu, không phải toàn bộ application có thể chạy
 khi copy riêng từng dòng. Model/import/schema và biến như id/input/actor cần context.
 Trong project thật, controller gửi Query/Command; không copy ORM write vào controller.
+findByPk trong ví dụ ORM là đối chiếu cú pháp. Endpoint nhận ID client phải thêm
+company scope như EmployeeReadRepository.get(actor,id) và mục 14; không dùng
+findByPk đơn lẻ để mở dữ liệu toàn hệ thống cho người đăng nhập.
 Ví dụ PHP/Laravel minh họa cách giải cùng bài toán, không hứa mọi field giống DJI.
 DJI Employee dùng employee_code/full_name/employment_status/company_id; Node HRM dùng
-code, User.name, status và một workspace. Không được bỏ company/branch scope chỉ để
-làm code "giống nhau". Nơi khác tên field hoặc khác nghiệp vụ sẽ có chú thích.
+code, User.name, status và companyId. Company/role/permission đã lưu trong MySQL.
+Mỗi account thuộc một company, một role và có override allow/deny. Branch chưa triển khai.
+Không bỏ company scope để làm code "giống nhau". Xem phần hướng dẫn ngay mục 14 và 34.
 
 THỨ TỰ BỐN NHÓM
 A. Mục 01–08: cú pháp PHP ↔ JS và async.
@@ -460,20 +464,27 @@ PHP / LARAVEL:
 
 NODE.JS / JAVASCRIPT (ORM: SEQUELIZE KHI CÓ QUERY):
   const employees = await Employee.findAll({
-    where: { status: 'active', departmentId },
+    where: { status: 'active', ...companyWhere(actor) },
   });
 
 GIẢI THÍCH:
-Hai where liên tiếp thường là AND; object where nhiều field cũng thường là AND. Nhưng ví dụ DJI có company scope, Node ở đây lọc department trong một workspace: điều kiện nghiệp vụ KHÔNG tương đương hoàn toàn.
+Hai where liên tiếp là AND; object where nhiều field cũng là AND.
+companyWhere(actor) trả {companyId:actor.companyId}, lấy actor từ phiên xác thực.
+Trong MySQL cột là company_id, Sequelize map sang companyId. Bản Node hiện đã có
+company scope thật, tương ứng mục đích lọc company_id của Laravel.
+File: src/core/tenant.js và src/modules/employees/repositories/EmployeeReadRepository.js.
 
 ĐIỂM DỄ SAI:
-Không đổi company_id thành departmentId rồi cho rằng đã có tenant isolation. Code so sánh cú pháp không có nghĩa được bỏ scope nguồn.
+Không lấy companyId từ req.body/query làm scope được phép. companyId khác departmentId:
+company chứa nhiều phòng ban. Query search phải là company AND (name OR email),
+không được OR email ra ngoài company. FK ghép MySQL còn chặn department/user khác company.
 
 CÂU PHỎNG VẤN:
 Nếu làm nhiều công ty trong Node, chỉ có where status=active đã đủ bảo mật chưa?
 
 BÀI TỰ LÀM — CHƯA XEM AI GIẢI:
-Viết query lọc employee active và departmentId=2; giải thích vì sao cả hai điều kiện phải đúng.
+Viết query lọc employee active, departmentId=2 và companyWhere(actor); giải thích
+vì sao không thể dùng ID department của company khác. Thử bằng hai tài khoản company khác nhau.
 
 
 ==============================================================================
@@ -1047,16 +1058,28 @@ NODE.JS / JAVASCRIPT (ORM: SEQUELIZE KHI CÓ QUERY):
     authorize(EmployeePolicy, 'update'), controller.update);
 
 GIẢI THÍCH:
-Authentication xác định ai đang gọi; authorization kiểm tra được làm gì. Node Policy trong HRM là object hàm, còn DJI có thêm permission + tenant service.
+Authentication xác định ai đang gọi; authorization kiểm tra được làm gì.
+Node Policy hiện đọc permission đã load từ MySQL, không chỉ so user.role.
+Laravel/Spatie: $user->can('employees.update').
+Node: can(req.user,'employees.update').
+RolePermission lưu quyền của chức vụ; UserPermission.allowed lưu quyền riêng.
+loadAccess(user) đọc DB mỗi request: (role + allow) - deny → req.user.permissions.
+Policy chặn thao tác, companyWhere(actor) giới hạn dữ liệu, command giữ ownership/state.
+Mở http://localhost:8087/access/list bằng admin để tạo role, gán role và allow/deny.
+Các tài khoản cũ đã được migration gán company_id và role_id trong MySQL.
+Hướng dẫn trọn luồng/UI/SQL: docs/COMPANY-PERMISSION-LARAVEL-NODEJS.txt.
 
 ĐIỂM DỄ SAI:
-Ẩn nút không phải authorization. Rule sở hữu/trạng thái của bản ghi vẫn phải thực thi bên trong query/command. Không claim role-only bằng toàn bộ RBAC/ABAC/multi-tenant.
+Ẩn nút không phải authorization. Cần đồng thời permission, company scope và
+rule ownership/trạng thái. Gán/sửa quyền qua UI thu hồi JWT cũ bằng tokenVersion.
+Đây là RBAC MySQL + override riêng và company isolation, không phải toàn bộ ABAC/Spatie/ERP DJI.
 
 CÂU PHỎNG VẤN:
 401 khác 403 thế nào? Quản lý có được tự duyệt đơn nghỉ của chính mình không?
 
 BÀI TỰ LÀM — CHƯA XEM AI GIẢI:
-Chỉ ra role guard ở route và ownership/state guard trong LeaveCommands.js.
+Chỉ ra permission guard ở route, companyWhere trong query/command và ownership
+trong LeaveCommands.js. Tạo role chỉ có employees.view rồi tự kiểm tra PUT bị 403.
 
 
 ==============================================================================
@@ -1095,7 +1118,7 @@ PHP / LARAVEL:
   $commands->dispatch(new CreateEmployeeCommand($companyId, $data, $actorId));
 
 NODE.JS / JAVASCRIPT (ORM: SEQUELIZE KHI CÓ QUERY):
-  const result = await queryBus.ask(new GetEmployeeListQuery(filters));
+  const result = await queryBus.ask(new GetEmployeeListQuery(actor, filters));
   await commandBus.dispatch(new CreateEmployeeCommand(actor, input));
 
 GIẢI THÍCH:
@@ -1187,7 +1210,8 @@ GIẢI THÍCH:
 Cache tăng tốc đọc, DB vẫn là nguồn nghiệp vụ. Realtime thông báo thay đổi cho client đúng quyền; không phải mọi event đều broadcast cho tất cả user.
 
 ĐIỂM DỄ SAI:
-Cache key phải chứa scope cần thiết khi hệ thống có nhiều tenant/user. Không trả dashboard của người khác chỉ vì key chung. HRM chỉ cache dashboard quản lý, employee bypass.
+Cache key phải chứa scope cần thiết khi hệ thống có nhiều tenant/user. Không trả dashboard của người khác chỉ vì key chung. HRM dùng key dashboard chứa companyId, userId và permission hiệu lực; mutation invalidate.
+Realtime cũng kiểm tra company + quyền từ DB khi phát event, không broadcast chung managers.
 
 CÂU PHỎNG VẤN:
 Nếu Redis cache chết, hệ thống cần phản ứng thế nào?
@@ -1233,7 +1257,7 @@ LUỒNG ĐỌC — GET /api/employees/list
   src/modules/employees/routes/api.js
     → EmployeePolicy.view kiểm tra role.
   src/modules/employees/controllers/EmployeeController.js
-    → queryBus.ask(new GetEmployeeListQuery(req.query)).
+    → queryBus.ask(new GetEmployeeListQuery(req.user, req.query)).
   src/providers/HrmServiceProvider.js
     → đăng ký lớp Query với handler.
   src/modules/employees/queries/EmployeeQueries.js

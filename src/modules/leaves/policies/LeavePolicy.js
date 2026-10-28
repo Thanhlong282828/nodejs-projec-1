@@ -1,8 +1,7 @@
-// Tương tự Policy DJI. Điều kiện ownership/trạng thái bản ghi vẫn kiểm tra khi xử lý Command.
-import { managers, authenticated } from "../../../core/authorization.js";
+import { can } from "../../access/permissions.js";
 export const LeavePolicy = {
-  view: authenticated,
-  create: authenticated,
-  update: managers,
-  delete: authenticated,
+  view: (user) => can(user, "leaves.view"),
+  create: (user) => can(user, "leaves.create"),
+  update: (user) => can(user, "leaves.update"),
+  delete: (user) => can(user, "leaves.delete"),
 };

@@ -5,7 +5,7 @@
 <h1>Đội ngũ của chúng ta</h1>
 <p>Quản lý hồ sơ và đồng hành cùng từng thành viên.</p>
 </div>
-<button class="button primary" data-open="employee-dialog">＋ Thêm nhân viên</button>
+<% if(can("employees.create")){ %><button class="button primary" data-open="employee-dialog">＋ Thêm nhân viên</button><% } %>
 </section>
 <section class="panel">
 <form class="toolbar" method="get">
@@ -71,8 +71,8 @@
 </span>
 </td>
 <td>
-<button class="text-button" data-edit-employee="<%= JSON.stringify(e) %>">Sửa</button>
-<% if(e.status==='active'&&e.userId!==user.id){ %>
+<% if(can("employees.update")){ %><button class="text-button" data-edit-employee="<%= JSON.stringify(e) %>">Sửa</button><% } %>
+<% if(can('employees.delete')&&e.status==='active'&&e.userId!==user.id){ %>
 <button class="text-button danger" data-delete="/api/employees/delete/<%= e.id %>" data-confirm="Vô hiệu hóa nhân viên này? Dữ liệu lịch sử sẽ được giữ.">Ngừng</button>
 <% } %>
 </td>
@@ -122,7 +122,7 @@
 </label>
 <label>Lương cơ bản (VND)<input name="salary" data-number type="number" min="0" step="0.01" required>
 </label>
-<label>Quyền truy cập<select name="role">
+<label>Nhóm tài khoản cơ bản<select name="role">
 <option value="employee">Nhân viên</option>
 <% if(user.role==='admin'){ %>
 <option value="hr">HR</option>

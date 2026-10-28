@@ -5,6 +5,7 @@ import { modelOptions as options } from "../../../models/model-options.js";
 export const Leave = db.define(
   "Leave",
   {
+    companyId: { type: D.INTEGER.UNSIGNED, allowNull: false },
     id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
     employeeId: D.INTEGER.UNSIGNED,
     type: D.ENUM("annual", "sick", "unpaid"),

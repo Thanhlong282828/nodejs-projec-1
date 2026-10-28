@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+<section class="page-heading"><div><div class="eyebrow">COMPANY</div><h1>Công ty của bạn</h1><p>Dữ liệu và quyền truy cập được giới hạn theo công ty đang đăng nhập.</p></div></section>
+<% for(const company of companies){ %>
+<section class="panel access-panel"><h2><%= company.name %></h2><p>Mã công ty: <%= company.code %> · ID: <%= company.id %></p>
+<% if(can('companies.update')){ %>
+<form data-api="/api/companies/update/<%= company.id %>" data-method="PUT"><div class="form-grid">
+<label>Tên công ty<input name="name" value="<%= company.name %>" required maxlength="150"></label>
+<label>Mã công ty<input name="code" value="<%= company.code %>" required pattern="[A-Z0-9_-]{2,40}"></label>
+<label>Email<input name="email" type="email" value="<%= company.email %>" required></label>
+<label>Địa chỉ<input name="address" value="<%= company.address||'' %>" maxlength="300"></label></div>
+<div class="form-error" role="alert"></div><button class="button primary">Lưu công ty</button></form>
+<% } %></section><% } %>
+<% if(can('companies.create')&&user.role==='admin'){ %>
+<section class="panel access-panel"><h2>Tạo công ty mới</h2><p>Công ty mới có dữ liệu riêng và một tài khoản quản trị riêng. Sau khi tạo, đăng xuất rồi đăng nhập bằng email quản trị mới để vào công ty đó.</p>
+<form data-api="/api/companies/create"><div class="form-grid">
+<label>Tên công ty<input name="name" required maxlength="150"></label><label>Mã công ty<input name="code" required pattern="[A-Z0-9_-]{2,40}" placeholder="COMPANY_B"></label>
+<label>Email công ty<input name="email" type="email" required></label><label>Địa chỉ<input name="address" maxlength="300"></label>
+<label>Tên quản trị đầu tiên<input name="adminName" required maxlength="120"></label><label>Email quản trị<input name="adminEmail" type="email" required></label>
+<label>Mật khẩu quản trị<input name="adminPassword" type="password" required minlength="10" autocomplete="new-password"></label></div>
+<div class="form-error" role="alert"></div><button class="button primary">Tạo công ty và tài khoản</button></form></section>
+<% } %><%- include('partials/footer') %>

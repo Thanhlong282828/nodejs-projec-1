@@ -5,8 +5,9 @@ import { modelOptions as options } from "../../../models/model-options.js";
 export const Employee = db.define(
   "Employee",
   {
+    companyId: { type: D.INTEGER.UNSIGNED, allowNull: false },
     id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-    code: { type: D.STRING(30), unique: true },
+    code: { type: D.STRING(30) },
     userId: { type: D.INTEGER.UNSIGNED, unique: true },
     departmentId: D.INTEGER.UNSIGNED,
     position: D.STRING(120),

@@ -32,6 +32,7 @@ app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 app.use(cookieParser());
 app.use(express.static(fileURLToPath(new URL("../public", import.meta.url))));
 app.use((req, res, next) => {
+  res.locals.can = () => false;
   res.locals.user = null;
   res.locals.csrf = "";
   res.locals.active = "";

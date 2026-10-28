@@ -1,3 +1,5 @@
+import { webRoutes as companies } from "../modules/companies/routes/web.js";
+import { webRoutes as access } from "../modules/access/routes/web.js";
 // Tương tự routes/web.php: URL HTML và controller render EJS.
 import { Router } from "express";
 import { loginPage } from "../modules/auth/controllers/AuthController.js";
@@ -22,3 +24,6 @@ webRoutes.use(dashboardRoutes);
 webRoutes.use(notificationsRoutes);
 webRoutes.use(auditRoutes);
 webRoutes.use(systemRoutes);
+
+webRoutes.use(companies);
+webRoutes.use(access);

@@ -6,7 +6,7 @@ export const index = async (req, res) =>
   res.render("employees", {
     title: "Nhân viên",
     active: "employees",
-    result: await queryBus.ask(new GetEmployeeListQuery(req.query)),
-    departments: await queryBus.ask(new GetDepartmentListQuery()),
+    result: await queryBus.ask(new GetEmployeeListQuery(req.user, req.query)),
+    departments: await queryBus.ask(new GetDepartmentListQuery(req.user)),
     query: req.query,
   });

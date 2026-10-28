@@ -11,9 +11,12 @@ import {
   DeleteEmployeeCommand,
 } from "../commands/EmployeeCommands.js";
 export const list = async (req, res) =>
-  data(res, await queryBus.ask(new GetEmployeeListQuery(req.query)));
+  data(res, await queryBus.ask(new GetEmployeeListQuery(req.user, req.query)));
 export const get = async (req, res) =>
-  data(res, await queryBus.ask(new GetEmployeeDetailQuery(req.params.id)));
+  data(
+    res,
+    await queryBus.ask(new GetEmployeeDetailQuery(req.user, req.params.id)),
+  );
 export const create = async (req, res) =>
   data(
     res,

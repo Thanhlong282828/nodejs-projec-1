@@ -5,6 +5,7 @@ import { modelOptions as options } from "../../../models/model-options.js";
 export const Audit = db.define(
   "Audit",
   {
+    companyId: { type: D.INTEGER.UNSIGNED, allowNull: false },
     id: { type: D.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
     actorId: D.INTEGER.UNSIGNED,
     entity: D.STRING(60),

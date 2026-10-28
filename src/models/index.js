@@ -7,6 +7,23 @@ import { Attendance } from "../modules/attendance/models/Attendance.js";
 import { Audit } from "../modules/audit/models/Audit.js";
 import { Outbox } from "../modules/core/models/Outbox.js";
 import { DailyRun } from "../modules/core/models/DailyRun.js";
+import { Company } from "../modules/companies/models/Company.js";
+import {
+  Role,
+  Permission,
+  RolePermission,
+  UserPermission,
+} from "../modules/access/models/AccessModels.js";
+export { Company, Role, Permission, RolePermission, UserPermission };
+Company.hasMany(User, { foreignKey: "companyId", as: "users" });
+User.belongsTo(Company, { foreignKey: "companyId", as: "company" });
+User.belongsTo(Role, { foreignKey: "roleId", as: "accessRole" });
+Role.belongsToMany(Permission, {
+  through: RolePermission,
+  foreignKey: "roleId",
+  otherKey: "permissionId",
+  as: "permissions",
+});
 export {
   User,
   Employee,
@@ -34,5 +51,12 @@ export const safeUser = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  roleId: user.roleId,
+  roleName: user.accessRole?.name || user.role,
+  companyId: user.companyId,
+  company: user.company
+    ? { id: user.company.id, name: user.company.name, code: user.company.code }
+    : null,
+  permissions: user.permissions || [],
   employeeId: user.employee?.id || null,
 });

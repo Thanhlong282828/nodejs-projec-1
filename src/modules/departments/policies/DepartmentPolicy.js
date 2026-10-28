@@ -1,8 +1,7 @@
-// Tương tự Policy DJI. Điều kiện ownership/trạng thái bản ghi vẫn kiểm tra khi xử lý Command.
-import { managers, authenticated } from "../../../core/authorization.js";
+import { can } from "../../access/permissions.js";
 export const DepartmentPolicy = {
-  view: authenticated,
-  create: managers,
-  update: managers,
-  delete: managers,
+  view: (user) => can(user, "departments.view"),
+  create: (user) => can(user, "departments.create"),
+  update: (user) => can(user, "departments.update"),
+  delete: (user) => can(user, "departments.delete"),
 };

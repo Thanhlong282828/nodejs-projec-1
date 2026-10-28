@@ -21,6 +21,7 @@ export function registerObservers() {
         if (options.skipAudit) return;
         await Audit.create(
           {
+            companyId: record.companyId,
             actorId: options.actorId || null,
             entity: model.name,
             entityId: record.id,

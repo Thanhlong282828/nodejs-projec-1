@@ -1,3 +1,4 @@
+import { companyWhere } from "../../../core/tenant.js";
 // Command Handler: nghiệp vụ ghi + transaction + observer/outbox, tương tự DJI.
 import { db } from "../../../lib/db.js";
 import { Department, Employee } from "../../../models/index.js";
@@ -7,30 +8,35 @@ import { HttpError } from "../../../lib/http.js";
 import { publish } from "../../../events/index.js";
 async function create(actor, input) {
   const result = await db.transaction((transaction) =>
-    Department.create(departmentSchema.parse(input), {
-      transaction,
-      actorId: actor.id,
-    }),
+    Department.create(
+      { ...departmentSchema.parse(input), ...companyWhere(actor) },
+      {
+        transaction,
+        actorId: actor.id,
+      },
+    ),
   );
-  await publish({ topic: "department.created" });
+  await publish({ companyId: actor.companyId, topic: "department.created" });
   return result;
 }
 async function update(actor, id, input) {
   const values = departmentSchema.parse(input);
   const result = await db.transaction(async (transaction) => {
-    const row = await Department.findByPk(parseId(id), {
+    const row = await Department.findOne({
+      where: { id: parseId(id), ...companyWhere(actor) },
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
     if (!row) throw new HttpError(404, "Không tìm thấy phòng ban.");
     return row.update(values, { transaction, actorId: actor.id });
   });
-  await publish({ topic: "department.updated" });
+  await publish({ companyId: actor.companyId, topic: "department.updated" });
   return result;
 }
 async function remove(actor, id) {
   await db.transaction(async (transaction) => {
-    const row = await Department.findByPk(parseId(id), {
+    const row = await Department.findOne({
+      where: { id: parseId(id), ...companyWhere(actor) },
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
@@ -42,7 +48,7 @@ async function remove(actor, id) {
       );
     await row.destroy({ transaction, actorId: actor.id });
   });
-  await publish({ topic: "department.deleted" });
+  await publish({ companyId: actor.companyId, topic: "department.deleted" });
 }
 
 export class CreateDepartmentCommand {

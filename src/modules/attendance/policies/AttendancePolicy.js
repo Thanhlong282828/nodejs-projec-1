@@ -1,7 +1,6 @@
-// Tương tự Policy DJI. Điều kiện ownership/trạng thái bản ghi vẫn kiểm tra khi xử lý Command.
-import { managers, authenticated } from "../../../core/authorization.js";
+import { can } from "../../access/permissions.js";
 export const AttendancePolicy = {
-  view: authenticated,
-  checkIn: authenticated,
-  checkOut: authenticated,
+  view: (user) => can(user, "attendance.view"),
+  checkIn: (user) => can(user, "attendance.checkIn"),
+  checkOut: (user) => can(user, "attendance.checkOut"),
 };

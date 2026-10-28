@@ -1,6 +1,6 @@
 HƯỚNG DẪN TỪ LARAVEL DJI SANG NODE.JS / EXPRESS
 Project: PeopleFlow HRM — nodejs-projec-1
-Ngày cập nhật: 26/10/2026
+Ngày cập nhật: 28/10/2026
 Thư mục: ~/Desktop/xinviec/weeksevenfileone
 
 ĐỌC PHẦN NÀO TRƯỚC?
@@ -29,8 +29,14 @@ Các nghiệp vụ như payroll, hợp đồng, kho và bán hàng chưa phải 
 
 Điểm cần phân biệt:
 - DJI có company/branch scope, TenantAccessService và permission riêng.
-- HRM Node hiện là một workspace, kiểm tra role admin/hr/employee và ownership.
-  EmployeePolicy Node chưa tương đương toàn bộ Spatie permission/multi-company của DJI.
+- HRM Node đã có company_id, role và permission lưu MySQL; mỗi account thuộc một company.
+  EmployeePolicy kiểm tra permission; repository/command thêm companyWhere(actor).
+  Giống mục đích Spatie can() + company scope, nhưng mỗi account chỉ có một role/company,
+  không giả định tương đương toàn bộ Spatie/branch của DJI.
+  Bảng: hrm_companies, hrm_roles, hrm_permissions, hrm_role_permissions,
+  hrm_user_permissions, hrm_users.company_id/role_id.
+  Mở /companies/list và /access/list bằng admin; tạo company/role, gán tài khoản,
+  cấu hình allow/deny. Hướng dẫn chi tiết: COMPANY-PERMISSION-LARAVEL-NODEJS.txt.
 - DJI có thể tách tạo hồ sơ và tạo account. Node hiện vẫn tạo user kèm employee,
   đúng luồng đã có trước khi tổ chức lại source.
 - Đây không phải port 1:1 toàn bộ ERP DJI; là cách đặt các phần quen thuộc vào Node.
@@ -151,7 +157,7 @@ get() là GET. URL có /list để nói rõ thao tác, theo đúng lựa chọn 
 authorize() là middleware quyền. c.list là hàm controller; truyền hàm, không gọi c.list().
 
 Bước 2: src/modules/employees/controllers/EmployeeController.js
-  data(res, await queryBus.ask(new GetEmployeeListQuery(req.query)));
+  data(res, await queryBus.ask(new GetEmployeeListQuery(req.user, req.query)));
 
 So sánh:
   $request->query()             → req.query
@@ -160,8 +166,8 @@ So sánh:
   response()->json(...)        → data(res, ...), bên trong dùng res.json()
 
 Bước 3: src/modules/employees/queries/EmployeeQueries.js
-  GetEmployeeListQuery giữ filters.
-  queryHandlers ghép Query này với repository.list(filters).
+  GetEmployeeListQuery giữ actor đã xác thực + filters.
+  queryHandlers ghép Query này với repository.list(actor, filters).
 
 Query không phải câu SQL. Nó chỉ diễn đạt: "tôi muốn xem danh sách nhân viên
 với bộ lọc này". Handler quyết định gọi repository nào.
@@ -286,7 +292,16 @@ File cần đọc:
   src/modules/leaves/commands/LeaveCommands.js
   src/middleware/auth.js
 
-Policy ở đây là object JS với các hàm, không phải class PHP hay Spatie database.
+Policy là object JS với các hàm. Bên trong gọi can(user,permission) dựa trên MySQL:
+  Laravel: $user->can('employees.update').
+  Node:    can(user,'employees.update').
+loadAccess đọc hrm_roles/role_permissions/user_permissions mỗi request.
+Node không cài package Spatie PHP; dùng bảng riêng thực hiện RBAC cùng mục đích.
+Chức vụ gán qua /access/list; quyền hiệu lực = (quyền role + allow) - deny.
+Gán/sửa quyền tăng tokenVersion, account liên quan phải login lại.
+Company scope lấy từ req.user.companyId, không lấy từ query/body của browser.
+FK ghép MySQL bảo vệ user/role/department/employee cùng company.
+Học tiếp ngay: COMPANY-PERMISSION-LARAVEL-NODEJS.txt, có cặp code, SQL và terminal.
 Tên action trên route phải tồn tại trong Policy; architecture test kiểm tra điều đó.
 Logout tăng tokenVersion, thu hồi token cũ của user. Đổi password/role/trạng thái
 cũng tiếp tục thu hồi phiên như trước khi refactor.
@@ -304,7 +319,7 @@ cho Node xử lý việc khác; không có nghĩa CPU nặng tự chạy ở thr
 
 Ví dụ trong controller:
   export const list = async (req, res) => {
-    const result = await queryBus.ask(new GetEmployeeListQuery(req.query));
+    const result = await queryBus.ask(new GetEmployeeListQuery(req.user, req.query));
     return data(res, result);
   };
 
